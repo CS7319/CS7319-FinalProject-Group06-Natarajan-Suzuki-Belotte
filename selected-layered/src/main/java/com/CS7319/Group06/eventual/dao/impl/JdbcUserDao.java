@@ -42,12 +42,12 @@ public class JdbcUserDao implements UserDao {
         user.setAboutMe(rs.getString("about_me"));
         user.setCreatedAt(rs.getTimestamp("created_at").toLocalDateTime());
 
-        Array categoryArray = rs.getArray("category_ids");
+        Array categoryArray = rs.getArray("category_types");
         if (categoryArray != null) {
-            Integer[] ids = (Integer[]) categoryArray.getArray();
-            user.setCategoryIds(new ArrayList<>(Arrays.asList(ids)));
+            String[] types = (String[]) categoryArray.getArray();
+            user.setCategoryTypes(new ArrayList<>(Arrays.asList(types)));
         } else {
-            user.setCategoryIds(new ArrayList<>());
+            user.setCategoryTypes(new ArrayList<>());
         }
 
         Array groupArray = rs.getArray("group_ids");
@@ -63,10 +63,10 @@ public class JdbcUserDao implements UserDao {
 
     @Override
     public User createProfile(User user) {
-        String sql = "INSERT INTO users (email, name, pronoun, password_hash, role, profile_picture, location, about_me, category_ids, group_ids) " +
+        String sql = "INSERT INTO users (email, name, pronoun, password_hash, role, profile_picture, location, about_me, category_types, group_ids) " +
                 "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         try {
-            List<Integer> categoryIds = user.getCategoryIds();
+            List<String> categoryTypes = user.getCategoryTypes();
             List<Integer> groupIds = user.getGroupIds();
             jdbcTemplate.execute((java.sql.Connection conn) -> {
                 PreparedStatement ps = conn.prepareStatement(sql);
@@ -78,8 +78,8 @@ public class JdbcUserDao implements UserDao {
                 ps.setString(6, user.getProfilePicturePath());
                 ps.setString(7, user.getLocation());
                 ps.setString(8, user.getAboutMe());
-                ps.setArray(9, conn.createArrayOf("integer",
-                        categoryIds != null ? categoryIds.toArray() : new Integer[0]));
+                ps.setArray(9, conn.createArrayOf("text",
+                        categoryTypes != null ? categoryTypes.toArray() : new String[0]));
                 ps.setArray(10, conn.createArrayOf("integer",
                         groupIds != null ? groupIds.toArray() : new Integer[0]));
                 return ps.executeUpdate();
@@ -95,7 +95,7 @@ public class JdbcUserDao implements UserDao {
     @Override
     public User getUserByEmail(String email) {
         String sql = "SELECT email, name, pronoun, password_hash, role, profile_picture, " +
-                "location, about_me, category_ids, group_ids, created_at FROM users WHERE email = ?";
+                "location, about_me, category_types, group_ids, created_at FROM users WHERE email = ?";
         try {
             List<User> results = jdbcTemplate.query(sql, userRowMapper, email);
             return results.isEmpty() ? null : results.getFirst();
@@ -113,7 +113,7 @@ public class JdbcUserDao implements UserDao {
                 "role            = COALESCE(?, role), " +
                 "password_hash   = COALESCE(?, password_hash), " +
                 "profile_picture = COALESCE(?, profile_picture), " +
-                "category_ids    = COALESCE(?, category_ids), " +
+                "category_types  = COALESCE(?, category_types), " +
                 "group_ids       = COALESCE(?, group_ids) " +
                 "WHERE email = ?";
         try {
@@ -125,9 +125,9 @@ public class JdbcUserDao implements UserDao {
                 ps.setString(4, user.getRole());
                 ps.setString(5, user.getPasswordHash());
                 ps.setString(6, user.getProfilePicturePath());
-                List<Integer> categoryIds = user.getCategoryIds();
-                if (categoryIds != null && !categoryIds.isEmpty()) {
-                    ps.setArray(7, conn.createArrayOf("integer", categoryIds.toArray()));
+                List<String> categoryTypes = user.getCategoryTypes();
+                if (categoryTypes != null && !categoryTypes.isEmpty()) {
+                    ps.setArray(7, conn.createArrayOf("text", categoryTypes.toArray()));
                 } else {
                     ps.setNull(7, Types.ARRAY);
                 }

@@ -28,7 +28,7 @@ public class User {
     private String profilePicturePath;
     private String location;
     private String aboutMe;
-    private List<Integer> categoryIds;
+    private List<String> categoryTypes;
     private List<Integer> groupIds;
     private LocalDateTime createdAt;
 }

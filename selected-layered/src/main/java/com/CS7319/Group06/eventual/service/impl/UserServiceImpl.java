@@ -69,7 +69,7 @@ public class UserServiceImpl implements UserService {
         user.setRole(request.getRole());
         user.setLocation(request.getLocation());
         user.setAboutMe(request.getAboutMe());
-        user.setCategoryIds(request.getCategoryIds());
+        user.setCategoryTypes(request.getCategoryTypes());
         user.setGroupIds(request.getGroupIds());
 
         if (profilePicture != null && !profilePicture.isEmpty()) {
@@ -110,7 +110,7 @@ public class UserServiceImpl implements UserService {
         updates.setPasswordHash(request.getPassword() != null
                 ? passwordEncoder.encode(request.getPassword())
                 : null);
-        updates.setCategoryIds(request.getCategoryIds());
+        updates.setCategoryTypes(request.getCategoryTypes());
         updates.setGroupIds(request.getGroupIds());
 
         if (profilePicture != null && !profilePicture.isEmpty()) {

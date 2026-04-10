@@ -42,8 +42,8 @@ public class UserRequest {
     @Size(max = 1000)
     private String aboutMe;
 
-    @Size(max = 5, message = "You may select at most 5 categories")
-    private List<Integer> categoryIds;
+    @Size(max = 5, message = "You may select at most 5 category types")
+    private List<String> categoryTypes;
 
     private List<Integer> groupIds;
 }

@@ -14,7 +14,7 @@ CREATE TABLE users (
     profile_picture varchar(512),
     location        varchar(256),
     about_me        varchar(1000),
-    category_ids    integer[]     NOT NULL DEFAULT '{}',
+    category_types  text[]        NOT NULL DEFAULT '{}',
     group_ids       integer[]     NOT NULL DEFAULT '{}',
     created_at      timestamp     NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
@@ -51,7 +51,7 @@ CREATE TABLE events (
     event_picture   varchar(512),
     event_type      varchar(10)   NOT NULL DEFAULT 'PUBLIC',
     group_id        int           REFERENCES groups(id),
-    category_ids    integer[]     NOT NULL DEFAULT '{}'
+    category_types  text[]        NOT NULL DEFAULT '{}'
 );
 
 -- Seed categories

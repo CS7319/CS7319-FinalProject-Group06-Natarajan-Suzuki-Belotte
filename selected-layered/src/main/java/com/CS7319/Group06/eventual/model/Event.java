@@ -57,6 +57,6 @@ public class Event {
     // Required when eventType is GROUP
     private Integer groupId;
 
-    @Size(max = 3, message = "An event can have at most 3 categories")
-    private List<Integer> categoryIds;
+    @Size(max = 3, message = "An event can have at most 3 category types")
+    private List<String> categoryTypes;
 }

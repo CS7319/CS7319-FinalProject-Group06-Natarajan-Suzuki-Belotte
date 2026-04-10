@@ -1,6 +1,5 @@
 package com.CS7319.Group06.eventual.controller;
 
-import com.CS7319.Group06.eventual.model.Category;
 import com.CS7319.Group06.eventual.service.CategoryService;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -9,7 +8,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 /**
- * Exposes all available categories for users and events to reference
+ * Exposes all available category types for users and events to reference
  *
  * @author harininatarajan
  */
@@ -24,7 +23,7 @@ public class CategoryController {
     }
 
     @GetMapping
-    public List<Category> getAllCategories() {
-        return categoryService.getAllCategories();
+    public List<String> getAllCategoryTypes() {
+        return categoryService.getAllCategoryTypes();
     }
 }

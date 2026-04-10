@@ -1,7 +1,5 @@
 package com.CS7319.Group06.eventual.dao;
 
-import com.CS7319.Group06.eventual.model.Category;
-
 import java.util.List;
 
 /**
@@ -11,5 +9,5 @@ import java.util.List;
  */
 public interface CategoryDao {
 
-    List<Category> getAllCategories();
+    List<String> getAllCategoryTypes();
 }
