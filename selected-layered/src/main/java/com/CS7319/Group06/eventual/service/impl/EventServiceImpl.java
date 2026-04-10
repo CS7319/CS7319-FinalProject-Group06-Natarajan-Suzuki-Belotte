@@ -4,6 +4,7 @@ import com.CS7319.Group06.eventual.config.FileStorageConfig;
 import com.CS7319.Group06.eventual.dao.EventDao;
 import com.CS7319.Group06.eventual.exception.DaoException;
 import com.CS7319.Group06.eventual.model.Event;
+import com.CS7319.Group06.eventual.model.constants.EventType;
 import com.CS7319.Group06.eventual.service.EventService;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -66,10 +67,10 @@ public class EventServiceImpl implements EventService {
         if (!event.getEndDateTime().isAfter(event.getStartDateTime())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "End date/time must be after start date/time");
         }
-        if ("GROUP".equals(event.getEventType()) && event.getGroupId() == null) {
+        if (EventType.GROUP == event.getEventType() && event.getGroupId() == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "A group event must specify a groupId");
         }
-        if ("PUBLIC".equals(event.getEventType()) && event.getGroupId() != null) {
+        if (EventType.PUBLIC == event.getEventType() && event.getGroupId() != null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "A public event cannot be linked to a group");
         }
 
@@ -103,6 +104,7 @@ public class EventServiceImpl implements EventService {
 
         event.setEventId(id);
         event.setOrganizerEmail(organizerEmail);
+        event.setModifiedBy(organizerEmail);
 
         if (picture != null && !picture.isEmpty()) {
             event.setEventPicture(storeEventPicture(organizerEmail, picture));

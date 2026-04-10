@@ -38,7 +38,9 @@ public class JdbcGroupDao implements GroupDao {
         group.setCreatorEmail(rs.getString("creator_email"));
         group.setOwnerEmail(rs.getString("owner_email"));
         group.setIsPublic(rs.getObject("is_public", Boolean.class));
+        group.setModifiedBy(rs.getString("modified_by"));
         group.setCreatedAt(rs.getTimestamp("created_at").toLocalDateTime());
+        group.setUpdatedAt(rs.getTimestamp("updated_at").toLocalDateTime());
 
         Array memberArray = rs.getArray("member_emails");
         if (memberArray != null) {
@@ -52,20 +54,9 @@ public class JdbcGroupDao implements GroupDao {
     };
 
     @Override
-    public List<Group> getAllGroups() {
-        String sql = "SELECT id, name, description, creator_email, owner_email, is_public, member_emails, created_at " +
-                     "FROM groups ORDER BY name";
-        try {
-            return jdbcTemplate.query(sql, groupRowMapper);
-        } catch (CannotGetJdbcConnectionException e) {
-            throw new DaoException("Unable to connect to server or database", e);
-        }
-    }
-
-    @Override
     public Group getGroupById(int id) {
-        String sql = "SELECT id, name, description, creator_email, owner_email, is_public, member_emails, created_at " +
-                     "FROM groups WHERE id = ?";
+        String sql = "SELECT id, name, description, creator_email, owner_email, is_public, member_emails, modified_by, created_at, updated_at " +
+                "FROM groups WHERE id = ?";
         try {
             List<Group> results = jdbcTemplate.query(sql, groupRowMapper, id);
             return results.isEmpty() ? null : results.getFirst();
@@ -77,7 +68,7 @@ public class JdbcGroupDao implements GroupDao {
     @Override
     public Group createGroup(Group group) {
         String sql = "INSERT INTO groups (name, description, creator_email, owner_email, is_public, member_emails) " +
-                     "VALUES (?, ?, ?, ?, ?, ?) RETURNING id";
+                "VALUES (?, ?, ?, ?, ?, ?) RETURNING id";
         try {
             List<String> members = group.getMemberEmails();
             Integer newId = jdbcTemplate.execute((java.sql.Connection conn) -> {
@@ -104,21 +95,21 @@ public class JdbcGroupDao implements GroupDao {
 
     @Override
     public Group updateGroup(Group group) {
-        // COALESCE keeps the existing value when the incoming field is NULL
         String sql = "UPDATE groups SET " +
-                     "name          = COALESCE(?, name), " +
-                     "description   = COALESCE(?, description), " +
-                     "owner_email   = COALESCE(?, owner_email), " +
-                     "is_public     = COALESCE(?, is_public), " +
-                     "member_emails = COALESCE(?, member_emails) " +
-                     "WHERE id = ?";
+                "name          = COALESCE(?, name), " +
+                "description   = COALESCE(?, description), " +
+                "owner_email   = COALESCE(?, owner_email), " +
+                "is_public     = COALESCE(?, is_public), " +
+                "member_emails = COALESCE(?, member_emails), " +
+                "modified_by   = ?, " +
+                "updated_at    = CURRENT_TIMESTAMP " +
+                "WHERE id = ?";
         try {
             jdbcTemplate.execute((java.sql.Connection conn) -> {
                 PreparedStatement ps = conn.prepareStatement(sql);
                 ps.setString(1, group.getName());
                 ps.setString(2, group.getDescription());
                 ps.setString(3, group.getOwnerEmail());
-                // Boolean is nullable — null means "do not change"
                 if (group.getIsPublic() != null) {
                     ps.setBoolean(4, group.getIsPublic());
                 } else {
@@ -130,7 +121,8 @@ public class JdbcGroupDao implements GroupDao {
                 } else {
                     ps.setNull(5, Types.ARRAY);
                 }
-                ps.setInt(6, group.getGroupId());
+                ps.setString(6, group.getModifiedBy());
+                ps.setInt(7, group.getGroupId());
                 return ps.executeUpdate();
             });
             return getGroupById(group.getGroupId());
@@ -138,6 +130,20 @@ public class JdbcGroupDao implements GroupDao {
             throw new DaoException("Unable to connect to server or database", e);
         } catch (DataIntegrityViolationException e) {
             throw new DaoException("A group with that name already exists", e);
+        }
+    }
+
+    @Override
+    public Group addMember(int groupId, String memberEmail) {
+        String sql = "UPDATE groups SET " +
+                "member_emails = array_append(member_emails, ?), " +
+                "updated_at    = CURRENT_TIMESTAMP " +
+                "WHERE id = ? AND NOT (? = ANY(member_emails))";
+        try {
+            jdbcTemplate.update(sql, memberEmail, groupId, memberEmail);
+            return getGroupById(groupId);
+        } catch (CannotGetJdbcConnectionException e) {
+            throw new DaoException("Unable to connect to server or database", e);
         }
     }
 }

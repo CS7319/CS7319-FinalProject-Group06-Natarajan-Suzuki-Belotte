@@ -1,36 +1,28 @@
 package com.CS7319.Group06.eventual.model;
 
+import com.CS7319.Group06.eventual.model.constants.JoinRequestStatus;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import lombok.Data;
 
 import java.time.LocalDateTime;
-import java.util.List;
 
 /**
- * Represents a community group a user can join
+ * Class for join request
  *
  * @author harininatarajan
  */
 @Data
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
-public class Group {
+public class GroupJoinRequest {
+
+    private int id;
 
     private int groupId;
 
-    private String name;
+    private String requesterEmail;
 
-    private String description;
-
-    private String creatorEmail;
-
-    private String ownerEmail;
-
-    private Boolean isPublic;
-
-    private List<String> memberEmails;
-
-    private String modifiedBy;
+    private JoinRequestStatus status;
 
     private LocalDateTime createdAt;
 

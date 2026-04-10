@@ -13,9 +13,30 @@ import org.springframework.web.multipart.MultipartFile;
  */
 public interface UserService {
 
+    /**
+     * Register a new user
+     *
+     * @param request
+     * @param profilePicture
+     * @return
+     */
     User register(UserRequest request, MultipartFile profilePicture);
 
+    /**
+     * User login
+     *
+     * @param credentials
+     * @return
+     */
     AuthResponse login(UserCredentials credentials);
 
+    /**
+     * Update user profile
+     *
+     * @param email
+     * @param request
+     * @param profilePicture
+     * @return
+     */
     User update(String email, UserRequest request, MultipartFile profilePicture);
 }

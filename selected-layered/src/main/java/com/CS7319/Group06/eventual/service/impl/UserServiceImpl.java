@@ -51,7 +51,7 @@ public class UserServiceImpl implements UserService {
         if (request.getPassword() == null || request.getPassword().isBlank()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Password is required");
         }
-        if (request.getRole() == null || request.getRole().isBlank()) {
+        if (request.getRole() == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Role is required");
         }
         if (request.getName() == null || request.getName().isBlank()) {
@@ -91,8 +91,8 @@ public class UserServiceImpl implements UserService {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid credentials");
         }
 
-        String token = jwtUtil.generateToken(user.getEmail(), user.getRole());
-        return new AuthResponse(token, user.getEmail(), user.getRole());
+        String token = jwtUtil.generateToken(user.getEmail(), user.getRole().name());
+        return new AuthResponse(token, user.getEmail(), user.getRole().name());
     }
 
     @Override
@@ -103,7 +103,7 @@ public class UserServiceImpl implements UserService {
 
         User updates = new User();
         updates.setEmail(email);
-        updates.setPronoun(request.getPronoun()); // name is immutable — intentionally excluded
+        updates.setPronoun(request.getPronoun());
         updates.setLocation(request.getLocation());
         updates.setAboutMe(request.getAboutMe());
         updates.setRole(request.getRole());

@@ -3,6 +3,7 @@ package com.CS7319.Group06.eventual.dao.impl;
 import com.CS7319.Group06.eventual.dao.EventDao;
 import com.CS7319.Group06.eventual.exception.DaoException;
 import com.CS7319.Group06.eventual.model.Event;
+import com.CS7319.Group06.eventual.model.constants.EventType;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.jdbc.CannotGetJdbcConnectionException;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -41,8 +42,14 @@ public class JdbcEventDao implements EventDao {
         event.setOrganizerEmail(rs.getString("organizer_email"));
         event.setOrganizerName(rs.getString("organizer_name"));
         event.setCapacity(rs.getInt("capacity"));
+        int availableSpots = rs.getInt("available_spots");
+        event.setAvailableSpots(rs.wasNull() ? null : availableSpots);
+        event.setWaitlistCount(rs.getInt("waitlist_count"));
+        event.setModifiedBy(rs.getString("modified_by"));
+        event.setCreatedAt(rs.getTimestamp("created_at").toLocalDateTime());
+        event.setUpdatedAt(rs.getTimestamp("updated_at").toLocalDateTime());
         event.setEventPicture(rs.getString("event_picture"));
-        event.setEventType(rs.getString("event_type"));
+        event.setEventType(EventType.valueOf(rs.getString("event_type")));
         int groupId = rs.getInt("group_id");
         event.setGroupId(rs.wasNull() ? null : groupId);
 
@@ -61,7 +68,13 @@ public class JdbcEventDao implements EventDao {
     public Event getEventById(int id) {
         String sql = "SELECT e.id, e.title, e.description, e.location, e.start_datetime, e.end_datetime, " +
                 "e.organizer_email, u.name AS organizer_name, " +
-                "e.capacity, e.event_picture, e.event_type, e.group_id, e.category_types " +
+                "e.capacity, " +
+                     "CASE WHEN e.capacity = 0 THEN NULL " +
+                     "     ELSE GREATEST(0, e.capacity - (SELECT COUNT(*) FROM rsvp WHERE event_id = e.id AND status = 'GOING')) " +
+                     "END AS available_spots, " +
+                     "(SELECT COUNT(*) FROM rsvp WHERE event_id = e.id AND status = 'WAITLISTED') AS waitlist_count, " +
+                     "e.modified_by, e.created_at, e.updated_at, " +
+                     "e.event_picture, e.event_type, e.group_id, e.category_types " +
                 "FROM events e JOIN users u ON e.organizer_email = u.email " +
                 "WHERE e.id = ?";
         try {
@@ -87,7 +100,7 @@ public class JdbcEventDao implements EventDao {
                 ps.setString(6, event.getOrganizerEmail());
                 ps.setInt(7, event.getCapacity());
                 ps.setString(8, event.getEventPicture());
-                ps.setString(9, event.getEventType());
+                ps.setString(9, event.getEventType().name());
                 if (event.getGroupId() != null) {
                     ps.setInt(10, event.getGroupId());
                 } else {
@@ -119,7 +132,9 @@ public class JdbcEventDao implements EventDao {
                 "event_picture   = COALESCE(?, event_picture), " +
                 "event_type      = COALESCE(?, event_type), " +
                 "group_id        = COALESCE(?, group_id), " +
-                "category_types  = COALESCE(?, category_types) " +
+                "category_types  = COALESCE(?, category_types), " +
+                "modified_by     = ?, " +
+                "updated_at      = CURRENT_TIMESTAMP " +
                 "WHERE id = ?";
         try {
             int rowsAffected = jdbcTemplate.execute((java.sql.Connection conn) -> {
@@ -136,7 +151,7 @@ public class JdbcEventDao implements EventDao {
                     ps.setNull(6, Types.INTEGER);
                 }
                 ps.setString(7, event.getEventPicture());
-                ps.setString(8, event.getEventType());
+                ps.setString(8, event.getEventType() != null ? event.getEventType().name() : null);
                 if (event.getGroupId() != null) {
                     ps.setInt(9, event.getGroupId());
                 } else {
@@ -148,7 +163,8 @@ public class JdbcEventDao implements EventDao {
                 } else {
                     ps.setNull(10, Types.ARRAY);
                 }
-                ps.setInt(11, event.getEventId());
+                ps.setString(11, event.getModifiedBy());
+                ps.setInt(12, event.getEventId());
                 return ps.executeUpdate();
             });
             if (rowsAffected == 0) {

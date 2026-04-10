@@ -3,6 +3,7 @@ package com.CS7319.Group06.eventual.dao.impl;
 import com.CS7319.Group06.eventual.dao.UserDao;
 import com.CS7319.Group06.eventual.exception.DaoException;
 import com.CS7319.Group06.eventual.model.User;
+import com.CS7319.Group06.eventual.model.constants.UserRole;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.jdbc.CannotGetJdbcConnectionException;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -36,11 +37,12 @@ public class JdbcUserDao implements UserDao {
         user.setName(rs.getString("name"));
         user.setPronoun(rs.getString("pronoun"));
         user.setPasswordHash(rs.getString("password_hash"));
-        user.setRole(rs.getString("role"));
+        user.setRole(UserRole.valueOf(rs.getString("role")));
         user.setProfilePicturePath(rs.getString("profile_picture"));
         user.setLocation(rs.getString("location"));
         user.setAboutMe(rs.getString("about_me"));
         user.setCreatedAt(rs.getTimestamp("created_at").toLocalDateTime());
+        user.setUpdatedAt(rs.getTimestamp("updated_at").toLocalDateTime());
 
         Array categoryArray = rs.getArray("category_types");
         if (categoryArray != null) {
@@ -74,7 +76,7 @@ public class JdbcUserDao implements UserDao {
                 ps.setString(2, user.getName());
                 ps.setString(3, user.getPronoun());
                 ps.setString(4, user.getPasswordHash());
-                ps.setString(5, user.getRole());
+                ps.setString(5, user.getRole().name());
                 ps.setString(6, user.getProfilePicturePath());
                 ps.setString(7, user.getLocation());
                 ps.setString(8, user.getAboutMe());
@@ -95,7 +97,7 @@ public class JdbcUserDao implements UserDao {
     @Override
     public User getUserByEmail(String email) {
         String sql = "SELECT email, name, pronoun, password_hash, role, profile_picture, " +
-                "location, about_me, category_types, group_ids, created_at FROM users WHERE email = ?";
+                "location, about_me, category_types, group_ids, created_at, updated_at FROM users WHERE email = ?";
         try {
             List<User> results = jdbcTemplate.query(sql, userRowMapper, email);
             return results.isEmpty() ? null : results.getFirst();
@@ -114,7 +116,8 @@ public class JdbcUserDao implements UserDao {
                 "password_hash   = COALESCE(?, password_hash), " +
                 "profile_picture = COALESCE(?, profile_picture), " +
                 "category_types  = COALESCE(?, category_types), " +
-                "group_ids       = COALESCE(?, group_ids) " +
+                "group_ids       = COALESCE(?, group_ids), " +
+                "updated_at      = CURRENT_TIMESTAMP " +
                 "WHERE email = ?";
         try {
             jdbcTemplate.execute((java.sql.Connection conn) -> {
@@ -122,7 +125,7 @@ public class JdbcUserDao implements UserDao {
                 ps.setString(1, user.getPronoun());
                 ps.setString(2, user.getLocation());
                 ps.setString(3, user.getAboutMe());
-                ps.setString(4, user.getRole());
+                ps.setString(4, user.getRole() != null ? user.getRole().name() : null);
                 ps.setString(5, user.getPasswordHash());
                 ps.setString(6, user.getProfilePicturePath());
                 List<String> categoryTypes = user.getCategoryTypes();

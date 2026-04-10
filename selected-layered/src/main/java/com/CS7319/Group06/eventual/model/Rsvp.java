@@ -1,36 +1,30 @@
 package com.CS7319.Group06.eventual.model;
 
+import com.CS7319.Group06.eventual.model.constants.RsvpStatus;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
+import jakarta.validation.constraints.NotEmpty;
 import lombok.Data;
 
 import java.time.LocalDateTime;
-import java.util.List;
 
 /**
- * Represents a community group a user can join
+ * Represents a users RSVP to an event.
  *
  * @author harininatarajan
  */
 @Data
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
-public class Group {
+public class Rsvp {
 
-    private int groupId;
+    private int id;
 
-    private String name;
+    private int eventId;
 
-    private String description;
+    @NotEmpty
+    private String userEmail;
 
-    private String creatorEmail;
-
-    private String ownerEmail;
-
-    private Boolean isPublic;
-
-    private List<String> memberEmails;
-
-    private String modifiedBy;
+    private RsvpStatus status;
 
     private LocalDateTime createdAt;
 

@@ -9,5 +9,10 @@ import java.util.List;
  */
 public interface CategoryService {
 
+    /**
+     * List all the categories
+     *
+     * @return
+     */
     List<String> getAllCategoryTypes();
 }

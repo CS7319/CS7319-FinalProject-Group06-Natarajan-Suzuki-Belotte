@@ -8,9 +8,7 @@ import lombok.Data;
 import java.util.List;
 
 /**
- * Unified request class for group creation and update.
- * All fields are optional at the class level; required-field rules
- * are enforced in the service layer depending on the operation.
+ * Request class for group creation and update.
  *
  * @author harininatarajan
  */

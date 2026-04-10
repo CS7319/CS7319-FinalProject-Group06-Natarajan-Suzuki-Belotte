@@ -1,6 +1,8 @@
 BEGIN TRANSACTION;
 
+DROP TABLE IF EXISTS rsvp;
 DROP TABLE IF EXISTS events;
+DROP TABLE IF EXISTS group_join_requests;
 DROP TABLE IF EXISTS users;
 DROP TABLE IF EXISTS categories;
 DROP TABLE IF EXISTS groups;
@@ -16,7 +18,8 @@ CREATE TABLE users (
     about_me        varchar(1000),
     category_types  text[]        NOT NULL DEFAULT '{}',
     group_ids       integer[]     NOT NULL DEFAULT '{}',
-    created_at      timestamp     NOT NULL DEFAULT CURRENT_TIMESTAMP
+    created_at      timestamp     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at      timestamp     NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 -- email is the primary key so it is already indexed; this named index makes intent explicit
@@ -28,6 +31,16 @@ CREATE TABLE categories (
     type varchar(100) NOT NULL
 );
 
+CREATE TABLE group_join_requests (
+    id              serial        PRIMARY KEY,
+    group_id        int           NOT NULL REFERENCES groups(id),
+    requester_email varchar(256)  NOT NULL REFERENCES users(email),
+    status          varchar(20)   NOT NULL DEFAULT 'PENDING', -- PENDING, APPROVED, REJECTED
+    created_at      timestamp     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at      timestamp     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (group_id, requester_email)
+);
+
 CREATE TABLE groups (
     id              serial        PRIMARY KEY,
     name            varchar(100)  NOT NULL UNIQUE,
@@ -36,7 +49,19 @@ CREATE TABLE groups (
     owner_email     varchar(256)  NOT NULL REFERENCES users(email),
     is_public       boolean       NOT NULL DEFAULT true,
     member_emails   text[]        NOT NULL DEFAULT '{}',
-    created_at      timestamp     NOT NULL DEFAULT CURRENT_TIMESTAMP
+    modified_by     varchar(256)  REFERENCES users(email),
+    created_at      timestamp     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at      timestamp     NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE rsvp (
+    id          serial        PRIMARY KEY,
+    event_id    int           NOT NULL REFERENCES events(id),
+    user_email  varchar(256)  NOT NULL REFERENCES users(email),
+    status      varchar(20)   NOT NULL DEFAULT 'GOING', -- GOING, WAITLISTED, CANCELLED
+    created_at  timestamp     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at  timestamp     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (event_id, user_email)
 );
 
 CREATE TABLE events (
@@ -51,7 +76,10 @@ CREATE TABLE events (
     event_picture   varchar(512),
     event_type      varchar(10)   NOT NULL DEFAULT 'PUBLIC',
     group_id        int           REFERENCES groups(id),
-    category_types  text[]        NOT NULL DEFAULT '{}'
+    category_types  text[]        NOT NULL DEFAULT '{}',
+    modified_by     varchar(256)  REFERENCES users(email),
+    created_at      timestamp     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at      timestamp     NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Seed categories
