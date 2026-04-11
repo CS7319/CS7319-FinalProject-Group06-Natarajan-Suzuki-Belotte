@@ -46,9 +46,7 @@ public class ElasticsearchIndexInitializer {
              * Keyword fields (event_type, organizer_email, category_types) are used for exact filters.
              * Date fields support range queries.
              */
-            client.indices().create(c -> c
-                    .index(index)
-                    .mappings(m -> m
+            client.indices().create(c -> c.index(index).mappings(m -> m
                             .properties("title", p -> p.text(t -> t))
                             .properties("description", p -> p.text(t -> t))
                             .properties("location", p -> p.text(t -> t.fields("keyword", f -> f.keyword(k -> k))))
@@ -91,9 +89,7 @@ public class ElasticsearchIndexInitializer {
              * Keyword fields (owner_email) are used for exact filters.
              * member_count support range queries.
              */
-            client.indices().create(c -> c
-                    .index(index)
-                    .mappings(m -> m
+            client.indices().create(c -> c.index(index).mappings(m -> m
                             .properties("name", p -> p.text(t -> t))
                             .properties("description", p -> p.text(t -> t))
                             .properties("owner_email", p -> p.keyword(k -> k))
