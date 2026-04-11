@@ -62,4 +62,12 @@ public interface RsvpDao {
      * @return
      */
     Rsvp getFirstWaitlisted(int eventId);
+
+    /**
+     * Get all RSVPs made by a user — used to build recommendation exclusion list
+     *
+     * @param userEmail
+     * @return
+     */
+    List<Rsvp> getRsvpsByUser(String userEmail);
 }

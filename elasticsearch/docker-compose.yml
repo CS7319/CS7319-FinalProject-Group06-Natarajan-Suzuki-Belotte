@@ -1,0 +1,135 @@
+version: '3.8'
+
+# Shared infrastructure for both selected-layered and unselected-microservice architectures.
+# Runs a 3-node Elasticsearch cluster.
+#
+# Usage:
+#   Start:  docker-compose up -d
+#   Stop:   docker-compose down
+#   Reset:  docker-compose down -v   (removes all data volumes)
+
+services:
+
+  #Node 1
+  es01:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.13.4
+    container_name: es01
+    environment:
+      - node.name=es01
+      - cluster.name=eventual-es-cluster
+      - discovery.seed_hosts=es02,es03
+      - cluster.initial_master_nodes=es01,es02,es03
+      - bootstrap.memory_lock=true
+      - xpack.security.enabled=false
+      - xpack.ml.enabled=false
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - es01-data:/usr/share/elasticsearch/data
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    networks:
+      - esnet
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s http://localhost:9200/_cluster/health | grep -q '\"status\":\"green\"\\|\"status\":\"yellow\"'"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+
+  #Node 2 (master-eligible + data)
+  es02:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.13.4
+    container_name: es02
+    environment:
+      - node.name=es02
+      - cluster.name=eventual-es-cluster
+      - discovery.seed_hosts=es01,es03
+      - cluster.initial_master_nodes=es01,es02,es03
+      - bootstrap.memory_lock=true
+      - xpack.security.enabled=false
+      - xpack.ml.enabled=false
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - es02-data:/usr/share/elasticsearch/data
+    networks:
+      - esnet
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s http://localhost:9200/_cluster/health | grep -q '\"status\":\"green\"\\|\"status\":\"yellow\"'"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+
+  #Node 3 (master-eligible + data)
+  es03:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.13.4
+    container_name: es03
+    environment:
+      - node.name=es03
+      - cluster.name=eventual-es-cluster
+      - discovery.seed_hosts=es01,es02
+      - cluster.initial_master_nodes=es01,es02,es03
+      - bootstrap.memory_lock=true
+      - xpack.security.enabled=false
+      - xpack.ml.enabled=false
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - es03-data:/usr/share/elasticsearch/data
+    networks:
+      - esnet
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s http://localhost:9200/_cluster/health | grep -q '\"status\":\"green\"\\|\"status\":\"yellow\"'"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+
+  # Ollama (embedding model server) for text embedding and vector search
+  # After first startup, pull the model once: docker exec ollama ollama pull nomic-embed-text
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama-data:/root/.ollama
+    networks:
+      - esnet
+
+  #Kibana (optional – useful for inspecting indexes/documents)
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.13.4
+    container_name: kibana
+    environment:
+      - ELASTICSEARCH_HOSTS=http://es01:9200
+    ports:
+      - "5601:5601"
+    networks:
+      - esnet
+    depends_on:
+      es01:
+        condition: service_healthy
+
+volumes:
+  es01-data:
+    driver: local
+  es02-data:
+    driver: local
+  es03-data:
+    driver: local
+  ollama-data:
+    driver: local
+
+networks:
+  esnet:
+    driver: bridge
