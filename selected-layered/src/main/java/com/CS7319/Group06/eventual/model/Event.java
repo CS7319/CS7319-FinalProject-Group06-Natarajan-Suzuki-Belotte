@@ -1,6 +1,7 @@
 package com.CS7319.Group06.eventual.model;
 
 import com.CS7319.Group06.eventual.model.constants.EventType;
+import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
@@ -42,6 +43,7 @@ public class Event {
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
     private LocalDateTime endDateTime;
 
+    @JsonAlias("createdBy")
     private String organizerEmail;
 
     private String organizerName; //To display the name in the UI

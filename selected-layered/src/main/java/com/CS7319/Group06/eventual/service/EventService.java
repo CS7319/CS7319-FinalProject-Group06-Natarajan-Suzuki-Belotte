@@ -43,6 +43,7 @@ public interface EventService {
      * Delete an event
      *
      * @param id
+     * @param organizerEmail
      */
-    void deleteEvent(int id);
+    void deleteEvent(int id, String organizerEmail);
 }

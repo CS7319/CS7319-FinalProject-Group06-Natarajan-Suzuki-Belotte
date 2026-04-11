@@ -36,7 +36,7 @@ public class RsvpServiceImpl implements RsvpService {
 
     @Override
     public Rsvp rsvpToEvent(int eventId, String userEmail) {
-        Event event = getEventOrThrow(eventId);
+        Event event = getEvent(eventId);
 
         // Group event, only members can RSVP
         if (EventType.GROUP == event.getEventType()) {
@@ -104,7 +104,7 @@ public class RsvpServiceImpl implements RsvpService {
 
     @Override
     public List<Rsvp> getRsvpsForEvent(int eventId) {
-        getEventOrThrow(eventId);
+        getEvent(eventId);
         try {
             return rsvpDao.getRsvpsByEvent(eventId);
         } catch (DaoException e) {
@@ -112,7 +112,7 @@ public class RsvpServiceImpl implements RsvpService {
         }
     }
 
-    private Event getEventOrThrow(int eventId) {
+    private Event getEvent(int eventId) {
         try {
             Event event = eventDao.getEventById(eventId);
             if (event == null) {

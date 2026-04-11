@@ -52,7 +52,7 @@ public class EventController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ORGANIZER')")
-    public void deleteEvent(@PathVariable int id) {
-        eventService.deleteEvent(id);
+    public void deleteEvent(@PathVariable int id, Authentication authentication) {
+        eventService.deleteEvent(id, authentication.getName());
     }
 }

@@ -9,5 +9,10 @@ import java.util.List;
  */
 public interface CategoryDao {
 
+    /**
+     * To retrieve all the categories
+     *
+     * @return
+     */
     List<String> getAllCategoryTypes();
 }

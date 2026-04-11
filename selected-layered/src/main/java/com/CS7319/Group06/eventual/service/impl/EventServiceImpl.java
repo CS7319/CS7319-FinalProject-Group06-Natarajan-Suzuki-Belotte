@@ -122,7 +122,20 @@ public class EventServiceImpl implements EventService {
     }
 
     @Override
-    public void deleteEvent(int id) {
+    public void deleteEvent(int id, String organizerEmail) {
+        Event existing;
+        try {
+            existing = eventDao.getEventById(id);
+        } catch (DaoException e) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
+        }
+        if (existing == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Event not found with id: " + id);
+        }
+        if (!existing.getOrganizerEmail().equals(organizerEmail)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only the organizer of this event can delete it");
+        }
+
         try {
             int rows = eventDao.deleteEventById(id);
             if (rows == 0) {
