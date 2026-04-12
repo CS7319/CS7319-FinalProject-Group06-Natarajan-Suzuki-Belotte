@@ -7,4 +7,18 @@ import { RouterModule } from '@angular/router';
   templateUrl: './page-header.html',
   styleUrl: './page-header.scss',
 })
-export class PageHeader {}
+export class PageHeader {
+  user = {
+    isAuthenticated: false,
+  };
+
+  logIn() {
+    this.user.isAuthenticated = true;
+  }
+
+  logOut() {
+    this.user.isAuthenticated = false;
+  }
+
+  signUp() {}
+}
