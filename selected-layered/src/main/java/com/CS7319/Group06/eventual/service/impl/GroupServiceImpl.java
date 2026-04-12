@@ -7,7 +7,11 @@ import com.CS7319.Group06.eventual.model.Group;
 import com.CS7319.Group06.eventual.model.GroupJoinRequest;
 import com.CS7319.Group06.eventual.model.GroupRequest;
 import com.CS7319.Group06.eventual.model.constants.JoinRequestStatus;
+import com.CS7319.Group06.eventual.model.notification.JoinRequestApprovedNotification;
+import com.CS7319.Group06.eventual.model.notification.JoinRequestRejectedNotification;
+import com.CS7319.Group06.eventual.model.notification.JoinRequestSubmittedNotification;
 import com.CS7319.Group06.eventual.service.GroupService;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -25,10 +29,13 @@ public class GroupServiceImpl implements GroupService {
 
     private final GroupDao groupDao;
     private final GroupJoinRequestDao joinRequestDao;
+    private final ApplicationEventPublisher eventPublisher;
 
-    public GroupServiceImpl(GroupDao groupDao, GroupJoinRequestDao joinRequestDao) {
+    public GroupServiceImpl(GroupDao groupDao, GroupJoinRequestDao joinRequestDao,
+                            ApplicationEventPublisher eventPublisher) {
         this.groupDao = groupDao;
         this.joinRequestDao = joinRequestDao;
+        this.eventPublisher = eventPublisher;
     }
 
     @Override
@@ -115,15 +122,23 @@ public class GroupServiceImpl implements GroupService {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "You already have a pending join request for this group");
         }
         try {
+            GroupJoinRequest saved;
             if (existing != null) {
                 // Previously rejected — re-submit
-                return joinRequestDao.updateRequestStatus(existing.getId(), JoinRequestStatus.PENDING);
+                saved = joinRequestDao.updateRequestStatus(existing.getId(), JoinRequestStatus.PENDING);
+            } else {
+                GroupJoinRequest joinRequest = new GroupJoinRequest();
+                joinRequest.setGroupId(groupId);
+                joinRequest.setRequesterEmail(userEmail);
+                joinRequest.setStatus(JoinRequestStatus.PENDING);
+                saved = joinRequestDao.createRequest(joinRequest);
             }
-            GroupJoinRequest joinRequest = new GroupJoinRequest();
-            joinRequest.setGroupId(groupId);
-            joinRequest.setRequesterEmail(userEmail);
-            joinRequest.setStatus(JoinRequestStatus.PENDING);
-            return joinRequestDao.createRequest(joinRequest);
+
+            // Notify the group owner
+            eventPublisher.publishEvent(new JoinRequestSubmittedNotification(
+                    saved.getId(), groupId, group.getName(), group.getOwnerEmail(), userEmail));
+
+            return saved;
         } catch (DaoException e) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
         }
@@ -157,7 +172,13 @@ public class GroupServiceImpl implements GroupService {
 
         try {
             groupDao.addMember(groupId, request.getRequesterEmail());
-            return joinRequestDao.updateRequestStatus(requestId, JoinRequestStatus.APPROVED);
+            GroupJoinRequest approved = joinRequestDao.updateRequestStatus(requestId, JoinRequestStatus.APPROVED);
+
+            // Notify the requester
+            eventPublisher.publishEvent(new JoinRequestApprovedNotification(
+                    groupId, group.getName(), request.getRequesterEmail()));
+
+            return approved;
         } catch (DaoException e) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
         }
@@ -177,7 +198,13 @@ public class GroupServiceImpl implements GroupService {
         }
 
         try {
-            return joinRequestDao.updateRequestStatus(requestId, JoinRequestStatus.REJECTED);
+            GroupJoinRequest rejected = joinRequestDao.updateRequestStatus(requestId, JoinRequestStatus.REJECTED);
+
+            // Notify the requester
+            eventPublisher.publishEvent(new JoinRequestRejectedNotification(
+                    groupId, group.getName(), request.getRequesterEmail()));
+
+            return rejected;
         } catch (DaoException e) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
         }

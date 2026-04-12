@@ -5,11 +5,14 @@ import com.CS7319.Group06.eventual.dao.GroupDao;
 import com.CS7319.Group06.eventual.dao.RsvpDao;
 import com.CS7319.Group06.eventual.exception.DaoException;
 import com.CS7319.Group06.eventual.model.Event;
-import com.CS7319.Group06.eventual.model.constants.EventType;
 import com.CS7319.Group06.eventual.model.Group;
 import com.CS7319.Group06.eventual.model.Rsvp;
+import com.CS7319.Group06.eventual.model.constants.EventType;
 import com.CS7319.Group06.eventual.model.constants.RsvpStatus;
+import com.CS7319.Group06.eventual.model.notification.RsvpCancelledNotification;
+import com.CS7319.Group06.eventual.model.notification.RsvpCreatedNotification;
 import com.CS7319.Group06.eventual.service.RsvpService;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -27,11 +30,14 @@ public class RsvpServiceImpl implements RsvpService {
     private final RsvpDao rsvpDao;
     private final EventDao eventDao;
     private final GroupDao groupDao;
+    private final ApplicationEventPublisher eventPublisher;
 
-    public RsvpServiceImpl(RsvpDao rsvpDao, EventDao eventDao, GroupDao groupDao) {
+    public RsvpServiceImpl(RsvpDao rsvpDao, EventDao eventDao,
+                           GroupDao groupDao, ApplicationEventPublisher eventPublisher) {
         this.rsvpDao = rsvpDao;
         this.eventDao = eventDao;
         this.groupDao = groupDao;
+        this.eventPublisher = eventPublisher;
     }
 
     @Override
@@ -56,16 +62,23 @@ public class RsvpServiceImpl implements RsvpService {
         RsvpStatus status = resolveStatus(event);
 
         try {
+            Rsvp rsvp;
             if (existing != null) {
                 // Re-RSVP after cancellation
-                return rsvpDao.updateRsvpStatus(eventId, userEmail, status);
+                rsvp = rsvpDao.updateRsvpStatus(eventId, userEmail, status);
             } else {
-                Rsvp rsvp = new Rsvp();
-                rsvp.setEventId(eventId);
-                rsvp.setUserEmail(userEmail);
-                rsvp.setStatus(status);
-                return rsvpDao.createRsvp(rsvp);
+                Rsvp newRsvp = new Rsvp();
+                newRsvp.setEventId(eventId);
+                newRsvp.setUserEmail(userEmail);
+                newRsvp.setStatus(status);
+                rsvp = rsvpDao.createRsvp(newRsvp);
             }
+
+            // Notify the organizer
+            eventPublisher.publishEvent(new RsvpCreatedNotification(
+                    eventId, event.getTitle(), event.getOrganizerEmail(), userEmail, status.name()));
+
+            return rsvp;
         } catch (DaoException e) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
         }
@@ -73,6 +86,8 @@ public class RsvpServiceImpl implements RsvpService {
 
     @Override
     public Rsvp cancelRsvp(int eventId, String userEmail) {
+        Event event = getEvent(eventId);
+
         Rsvp existing = rsvpDao.getRsvpByEventAndUser(eventId, userEmail);
         if (existing == null) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND,
@@ -95,6 +110,10 @@ public class RsvpServiceImpl implements RsvpService {
                     rsvpDao.updateRsvpStatus(eventId, firstWaitlisted.getUserEmail(), RsvpStatus.GOING);
                 }
             }
+
+            // Notify the organizer
+            eventPublisher.publishEvent(new RsvpCancelledNotification(
+                    eventId, event.getTitle(), event.getOrganizerEmail(), userEmail));
 
             return cancelled;
         } catch (DaoException e) {
@@ -125,9 +144,7 @@ public class RsvpServiceImpl implements RsvpService {
         }
     }
 
-    /**
-     * If capacity is 0 the event is unlimited; otherwise compare current GOING count.
-     */
+    //If capacity is 0 the event is unlimited; otherwise compare current GOING count.
     private RsvpStatus resolveStatus(Event event) {
         if (event.getCapacity() == 0) {
             return RsvpStatus.GOING;
