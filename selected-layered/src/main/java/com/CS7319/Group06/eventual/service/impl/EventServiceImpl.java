@@ -11,6 +11,7 @@ import com.CS7319.Group06.eventual.model.notification.EventCancelledNotification
 import com.CS7319.Group06.eventual.model.notification.EventUpdatedNotification;
 import com.CS7319.Group06.eventual.model.notification.NewGroupEventCreatedNotification;
 import com.CS7319.Group06.eventual.service.EventService;
+import com.CS7319.Group06.eventual.service.IngestionService;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -37,14 +38,17 @@ public class EventServiceImpl implements EventService {
     private final RsvpDao rsvpDao;
     private final FileStorageConfig fileStorageConfig;
     private final ApplicationEventPublisher eventPublisher;
+    private final IngestionService ingestionService;
 
     public EventServiceImpl(EventDao eventDao, RsvpDao rsvpDao,
                             FileStorageConfig fileStorageConfig,
-                            ApplicationEventPublisher eventPublisher) {
+                            ApplicationEventPublisher eventPublisher,
+                            IngestionService ingestionService) {
         this.eventDao = eventDao;
         this.rsvpDao = rsvpDao;
         this.fileStorageConfig = fileStorageConfig;
         this.eventPublisher = eventPublisher;
+        this.ingestionService = ingestionService;
     }
 
     @Override
@@ -96,6 +100,9 @@ public class EventServiceImpl implements EventService {
         try {
             Event created = eventDao.createEvent(event);
 
+            // Sync to Elasticsearch asynchronously
+            ingestionService.indexEvent(created);
+
             // Notify group members when a new GROUP-type event is created
             if (EventType.GROUP == created.getEventType() && created.getGroupId() != null) {
                 eventPublisher.publishEvent(new NewGroupEventCreatedNotification(
@@ -137,7 +144,10 @@ public class EventServiceImpl implements EventService {
                 throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Event not found with id: " + id);
             }
 
-            // Notify all RSVPed users that the event has changed. Listener will fetch the RSVPs
+            // Sync to Elasticsearch asynchronously
+            ingestionService.indexEvent(updated);
+
+            // Notify all RSVPed users that the event has changed
             eventPublisher.publishEvent(new EventUpdatedNotification(id, updated.getTitle()));
 
             return updated;
@@ -174,6 +184,9 @@ public class EventServiceImpl implements EventService {
         } catch (DaoException e) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
         }
+
+        // Remove from Elasticsearch asynchronously
+        ingestionService.deleteEvent(id);
 
         // Notify RSVPed users after successful deletion
         eventPublisher.publishEvent(new EventCancelledNotification(id, existing.getTitle(), rsvpedEmails));
