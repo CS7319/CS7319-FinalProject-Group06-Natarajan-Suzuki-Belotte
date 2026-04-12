@@ -103,14 +103,6 @@ public class ElasticRecommendationDao extends AbstractSearchDao implements Recom
     private List<Query> buildGroupRecommendationFilters(GroupRecommendationContext context) {
         List<Query> filters = new ArrayList<>();
 
-        // Match users interests
-        if (context.getCategoryTypes() != null && !context.getCategoryTypes().isEmpty()) {
-            List<FieldValue> values = context.getCategoryTypes().stream().map(FieldValue::of).toList();
-            filters.add(Query.of(q -> q.terms(t -> t
-                    .field("category_types")
-                    .terms(tv -> tv.value(values)))));
-        }
-
         // Exclude groups the user is already a member of
         if (context.getExcludeGroupIds() != null && !context.getExcludeGroupIds().isEmpty()) {
             List<String> ids = context.getExcludeGroupIds();

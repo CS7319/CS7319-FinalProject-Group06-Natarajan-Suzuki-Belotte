@@ -54,7 +54,7 @@ public class RecommendationServiceImpl implements RecommendationService {
 
     @Override
     public SearchResult<EventDocument> recommendEvents(String userEmail, int page, int size) {
-        User user = getUserOrThrow(userEmail);
+        User user = getUser(userEmail);
 
         // Events the user already RSVPed to — exclude from recommendations
         List<String> excludeEventIds = getExcludeEventIds(userEmail);
@@ -80,7 +80,7 @@ public class RecommendationServiceImpl implements RecommendationService {
 
     @Override
     public SearchResult<GroupDocument> recommendGroups(String userEmail, int page, int size) {
-        User user = getUserOrThrow(userEmail);
+        User user = getUser(userEmail);
 
         // Groups the user is already a member of — exclude from recommendations
         List<String> excludeGroupIds = user.getGroupIds() != null
@@ -104,9 +104,7 @@ public class RecommendationServiceImpl implements RecommendationService {
         }
     }
 
-    // ── Helpers ───────────────────────────────────────────────────────────────
-
-    private User getUserOrThrow(String userEmail) {
+    private User getUser(String userEmail) {
         User user = userDao.getUserByEmail(userEmail);
         if (user == null) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found");
@@ -126,11 +124,7 @@ public class RecommendationServiceImpl implements RecommendationService {
         }
     }
 
-    /**
-     * Builds a plain-text representation of the user's interests and generates
-     * an embedding from it. Returns null if there is nothing to embed or if
-     * Ollama is unavailable — the DAO handles null gracefully by skipping kNN.
-     */
+    //Builds a plain-text representation of the users interests and generates an embedding from it
     private float[] generateInterestEmbedding(User user) {
         StringBuilder interestText = new StringBuilder();
 
