@@ -1,0 +1,19 @@
+package com.CS7319.Group06.eventual.model.search;
+
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
+import lombok.Data;
+
+/**
+ * Query parameters for searching groups.
+ *
+ * @author harininatarajan
+ */
+@Data
+@JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
+public class GroupSearchRequest extends BaseSearchRequest {
+
+    private String query; //free-text search across name and description
+
+    private Boolean isPublic; //filtering
+}

@@ -101,6 +101,17 @@ public class JdbcRsvpDao implements RsvpDao {
     }
 
     @Override
+    public List<Rsvp> getRsvpsByUser(String userEmail) {
+        String sql = "SELECT id, event_id, user_email, status, created_at, updated_at " +
+                     "FROM rsvp WHERE user_email = ? ORDER BY created_at DESC";
+        try {
+            return jdbcTemplate.query(sql, rsvpRowMapper, userEmail);
+        } catch (CannotGetJdbcConnectionException e) {
+            throw new DaoException("Unable to connect to server or database", e);
+        }
+    }
+
+    @Override
     public Rsvp getFirstWaitlisted(int eventId) {
         // Ordered by created_at so the earliest waitlisted gets promoted first
         String sql = "SELECT id, event_id, user_email, status, created_at, updated_at " +

@@ -11,6 +11,7 @@ import com.CS7319.Group06.eventual.model.notification.JoinRequestApprovedNotific
 import com.CS7319.Group06.eventual.model.notification.JoinRequestRejectedNotification;
 import com.CS7319.Group06.eventual.model.notification.JoinRequestSubmittedNotification;
 import com.CS7319.Group06.eventual.service.GroupService;
+import com.CS7319.Group06.eventual.service.IngestionService;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -30,12 +31,15 @@ public class GroupServiceImpl implements GroupService {
     private final GroupDao groupDao;
     private final GroupJoinRequestDao joinRequestDao;
     private final ApplicationEventPublisher eventPublisher;
+    private final IngestionService ingestionService;
 
     public GroupServiceImpl(GroupDao groupDao, GroupJoinRequestDao joinRequestDao,
-                            ApplicationEventPublisher eventPublisher) {
+                            ApplicationEventPublisher eventPublisher,
+                            IngestionService ingestionService) {
         this.groupDao = groupDao;
         this.joinRequestDao = joinRequestDao;
         this.eventPublisher = eventPublisher;
+        this.ingestionService = ingestionService;
     }
 
     @Override
@@ -64,7 +68,12 @@ public class GroupServiceImpl implements GroupService {
         group.setMemberEmails(initialMembers);
 
         try {
-            return groupDao.createGroup(group);
+            Group created = groupDao.createGroup(group);
+
+            // Sync to Elasticsearch asynchronously
+            ingestionService.indexGroup(created);
+
+            return created;
         } catch (DaoException e) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
         }
@@ -87,7 +96,12 @@ public class GroupServiceImpl implements GroupService {
         updates.setModifiedBy(requesterEmail);
 
         try {
-            return groupDao.updateGroup(updates);
+            Group updated = groupDao.updateGroup(updates);
+
+            // Sync to Elasticsearch asynchronously
+            ingestionService.indexGroup(updated);
+
+            return updated;
         } catch (DaoException e) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
         }
@@ -105,7 +119,12 @@ public class GroupServiceImpl implements GroupService {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "You are already a member of this group");
         }
         try {
-            return groupDao.addMember(groupId, userEmail);
+            Group updated = groupDao.addMember(groupId, userEmail);
+
+            // Member count changed re-index to keep ES in sync
+            ingestionService.indexGroup(updated);
+
+            return updated;
         } catch (DaoException e) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
         }
@@ -171,8 +190,11 @@ public class GroupServiceImpl implements GroupService {
         }
 
         try {
-            groupDao.addMember(groupId, request.getRequesterEmail());
+            Group updated = groupDao.addMember(groupId, request.getRequesterEmail());
             GroupJoinRequest approved = joinRequestDao.updateRequestStatus(requestId, JoinRequestStatus.APPROVED);
+
+            // Member count changed re-index to keep ES in sync
+            ingestionService.indexGroup(updated);
 
             // Notify the requester
             eventPublisher.publishEvent(new JoinRequestApprovedNotification(
