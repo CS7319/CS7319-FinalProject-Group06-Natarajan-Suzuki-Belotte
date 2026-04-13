@@ -2,4 +2,11 @@
   <div class="container">
     <h2 class="title">Profile</h2>
   </div>
+
+  @if (userProfile) {
+    <div>
+      <p>First Name: {{ userProfile.firstName }}</p>
+      <p>Last Name: {{ userProfile.lastName }}</p>
+    </div>
+  }
 </section>
