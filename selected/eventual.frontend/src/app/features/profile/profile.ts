@@ -1,6 +1,6 @@
 import { Component, inject } from '@angular/core';
 import { ProfileService } from './profile.service';
-import { UserProfile } from './profile.data';
+import { UserInfo } from './profile.data';
 
 @Component({
   selector: 'app-profile',
@@ -11,11 +11,9 @@ import { UserProfile } from './profile.data';
 export class Profile {
   private readonly profileService = inject(ProfileService);
 
-  userProfile: UserProfile = {} as UserProfile;
+  userInfo: UserInfo = {} as UserInfo;
 
   getUserInfo() {
-    this.profileService
-      .getUserInfo({} as any)
-      .subscribe((userProfile) => (this.userProfile = userProfile));
+    this.profileService.getUserInfo({} as any).subscribe((userInfo) => (this.userInfo = userInfo));
   }
 }

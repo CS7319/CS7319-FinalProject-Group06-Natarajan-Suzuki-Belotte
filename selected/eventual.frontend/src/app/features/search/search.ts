@@ -1,6 +1,6 @@
 import { Component, inject } from '@angular/core';
 import { SearchService } from './search.service';
-import { SocialEvent, SocialGroup } from '../../shared/data/event.data';
+import { EventInfo, EventGroup } from '../../shared/data/event.data';
 
 @Component({
   selector: 'app-search',
@@ -9,8 +9,8 @@ import { SocialEvent, SocialGroup } from '../../shared/data/event.data';
   styleUrl: './search.scss',
 })
 export class Search {
-  socialEvents: SocialEvent[] = [];
-  socialGroups: SocialGroup[] = [];
+  socialEvents: EventInfo[] = [];
+  socialGroups: EventGroup[] = [];
 
   private readonly searchService = inject(SearchService);
 

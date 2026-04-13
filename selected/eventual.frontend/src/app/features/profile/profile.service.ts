@@ -1,6 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
-import { User, UserProfile } from './profile.data';
+import { UserAccount, UserInfo } from './profile.data';
 import { Observable } from 'rxjs';
 
 @Injectable({
@@ -9,15 +9,15 @@ import { Observable } from 'rxjs';
 export class ProfileService {
   private readonly httpClient = inject(HttpClient);
 
-  getUserInfo(user: User): Observable<UserProfile> {
-    return this.httpClient.get<UserProfile>('/api/users/me', { params: { email: user.email } });
+  getUserInfo(user: UserAccount): Observable<UserInfo> {
+    return this.httpClient.get<UserInfo>('/api/users/me', { params: { email: user.email } });
   }
 
-  login(user: User): Observable<User> {
-    return this.httpClient.post<User>('/api/users/login', user);
+  login(user: UserAccount): Observable<UserAccount> {
+    return this.httpClient.post<UserAccount>('/api/users/login', user);
   }
 
-  signUp(user: User): Observable<User> {
-    return this.httpClient.post<User>('/api/users/register', user);
+  signUp(user: UserAccount): Observable<UserAccount> {
+    return this.httpClient.post<UserAccount>('/api/users/register', user);
   }
 }

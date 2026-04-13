@@ -1,20 +1,20 @@
-export interface SocialEvent {
+export interface EventInfo {
   id: number;
-  host: SocialHost;
+  host: EventHost;
   name: string;
   date: string;
   location: string;
   description: string;
 }
 
-export interface SocialGroup {
+export interface EventGroup {
   id: number;
-  host: SocialHost;
+  host: EventHost;
   name: string;
   description: string;
 }
 
-export interface SocialHost {
+export interface EventHost {
   handle: string;
   name: string;
 }
