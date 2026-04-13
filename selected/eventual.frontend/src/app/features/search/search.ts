@@ -1,6 +1,6 @@
 import { Component, inject } from '@angular/core';
 import { SearchService } from './search.service';
-import { SocialEvent } from '../../shared/data/social-event.data';
+import { SocialEvent, SocialGroup } from '../../shared/data/event.data';
 
 @Component({
   selector: 'app-search',
@@ -10,12 +10,19 @@ import { SocialEvent } from '../../shared/data/social-event.data';
 })
 export class Search {
   socialEvents: SocialEvent[] = [];
+  socialGroups: SocialGroup[] = [];
 
   private readonly searchService = inject(SearchService);
 
   getSocialEvents(query: string): void {
-    this.searchService.get(query).subscribe((events) => {
+    this.searchService.getEvents(query).subscribe((events) => {
       this.socialEvents = events || [];
+    });
+  }
+
+  getSocialGroups(query: string): void {
+    this.searchService.getGroups(query).subscribe((groups) => {
+      this.socialGroups = groups || [];
     });
   }
 }

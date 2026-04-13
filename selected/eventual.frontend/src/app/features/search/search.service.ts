@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
-import { SocialEvent } from '../../shared/data/social-event.data';
+import { SocialEvent, SocialGroup } from '../../shared/data/event.data';
 
 @Injectable({
   providedIn: 'root',
@@ -9,7 +9,11 @@ import { SocialEvent } from '../../shared/data/social-event.data';
 export class SearchService {
   private readonly httpClient = inject(HttpClient);
 
-  get(query: string): Observable<SocialEvent[]> {
-    return this.httpClient.get<SocialEvent[]>('/api/events', { params: { query } });
+  getEvents(query: string): Observable<SocialEvent[]> {
+    return this.httpClient.get<SocialEvent[]>('/api/search/events', { params: { query } });
+  }
+
+  getGroups(query: string): Observable<SocialGroup[]> {
+    return this.httpClient.get<SocialGroup[]>('/api/search/groups', { params: { query } });
   }
 }
