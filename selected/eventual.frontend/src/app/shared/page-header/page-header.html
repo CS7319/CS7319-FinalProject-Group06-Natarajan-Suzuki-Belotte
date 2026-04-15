@@ -1,0 +1,36 @@
+<header>
+  <nav class="navbar" role="navigation">
+    <div class="navbar-brand">
+      <a class="navbar-item" routerLink="">
+        <h1>Eventual</h1>
+      </a>
+
+      <a role="button" class="navbar-burger" data-target="navbarMain">
+        <span aria-hidden="true"></span>
+        <span aria-hidden="true"></span>
+        <span aria-hidden="true"></span>
+        <span aria-hidden="true"></span>
+      </a>
+    </div>
+
+    <div id="navbarMain" class="navbar-menu">
+      <div class="navbar-start">
+        <a class="navbar-item" routerLink="/profile">Profile</a>
+        <a class="navbar-item" routerLink="/search">Search</a>
+      </div>
+
+      <div class="navbar-end">
+        <div class="navbar-item">
+          <div class="buttons">
+            @if (user.isAuthenticated) {
+              <a class="button is-primary" (click)="logOut()">Log out</a>
+            } @else {
+              <a class="button is-primary" (click)="signUp()">Sign up</a>
+              <a class="button is-light" (click)="logIn()">Log in</a>
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+  </nav>
+</header>
