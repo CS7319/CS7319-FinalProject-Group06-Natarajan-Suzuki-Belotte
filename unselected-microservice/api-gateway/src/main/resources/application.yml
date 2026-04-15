@@ -1,0 +1,41 @@
+spring:
+  application:
+    name: api-gateway
+  cloud:
+    gateway:
+      routes:
+        - id: user-service
+          uri: http://localhost:8082
+          predicates:
+            - Path=/api/users/**
+
+        - id: event-service
+          uri: http://localhost:8081
+          predicates:
+            - Path=/api/events/**
+
+        - id: notification-service
+          uri: http://localhost:8083
+          predicates:
+            - Path=/api/notifications/**
+
+        - id: search-service
+          uri: http://localhost:8084
+          predicates:
+            - Path=/api/search/**
+
+        - id: support-service
+          uri: http://localhost:8085
+          predicates:
+            - Path=/api/support/**
+
+        - id: vendor-service
+          uri: http://localhost:8086
+          predicates:
+            - Path=/api/vendors/**
+
+server:
+  port: 8080
+
+jwt:
+  secret: ZXZlbnR1YWwtc2VjcmV0LWtleS1mb3ItanctYXV0aGVudGljYXRpb24tMjAyNA==
