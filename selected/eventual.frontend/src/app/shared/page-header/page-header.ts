@@ -1,7 +1,7 @@
 import { Component, inject } from '@angular/core';
 import { RouterModule } from '@angular/router';
 import { ProfileService } from '../../features/profile/profile.service';
-import { User } from '../../features/profile/profile.data';
+import { UserAccount } from '../../features/profile/profile.data';
 
 @Component({
   selector: 'app-page-header',
@@ -12,7 +12,7 @@ import { User } from '../../features/profile/profile.data';
 export class PageHeader {
   private readonly profileService = inject(ProfileService);
 
-  user: User = {
+  user: UserAccount = {
     email: '',
     isAuthenticated: false,
     password: '',
@@ -24,7 +24,7 @@ export class PageHeader {
   }
 
   logOut() {
-    this.user = {} as User;
+    this.user = {} as UserAccount;
   }
 
   signUp() {
