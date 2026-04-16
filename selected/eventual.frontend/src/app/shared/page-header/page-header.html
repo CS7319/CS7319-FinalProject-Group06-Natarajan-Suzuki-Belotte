@@ -21,8 +21,8 @@
               <a class="navbar-item" routerLink="/profile">Profile</a>
               <a class="button is-primary" (click)="logOut()">Log out</a>
             } @else {
-              <a class="button is-primary" (click)="signUp()">Sign up</a>
-              <a class="button is-light" (click)="logIn()">Log in</a>
+              <a class="button is-primary" (click)="onSignUpClicked()">Sign up</a>
+              <a class="button is-light" (click)="onLogInClicked()">Log in</a>
             }
           </div>
         </div>
@@ -30,3 +30,35 @@
     </div>
   </nav>
 </header>
+
+<div class="modal" id="loginModal">
+  <div class="modal-background"></div>
+  <div class="modal-card">
+    <header class="modal-card-head">
+      <p class="modal-card-title">Log In</p>
+      <button class="delete" aria-label="close" (click)="onCloseClicked()"></button>
+    </header>
+    <section class="modal-card-body">LOGIN</section>
+    <footer class="modal-card-foot">
+      <div class="buttons">
+        <button class="button is-success">Log in</button>
+      </div>
+    </footer>
+  </div>
+</div>
+
+<div class="modal" id="signupModal">
+  <div class="modal-background"></div>
+  <div class="modal-card">
+    <header class="modal-card-head">
+      <p class="modal-card-title">Sign Up</p>
+      <button class="delete" aria-label="close" (click)="onCloseClicked()"></button>
+    </header>
+    <section class="modal-card-body">SIGNUP</section>
+    <footer class="modal-card-foot">
+      <div class="buttons">
+        <button class="button is-success">Sign up</button>
+      </div>
+    </footer>
+  </div>
+</div>

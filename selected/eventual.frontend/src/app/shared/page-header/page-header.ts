@@ -1,4 +1,4 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, ElementRef, inject, OnInit, ViewChild } from '@angular/core';
 import { RouterModule } from '@angular/router';
 import { ProfileService } from '../../features/profile/profile.service';
 import { UserAccount, UserInfo } from '../../features/profile/profile.data';
@@ -11,6 +11,9 @@ import { UserAccount, UserInfo } from '../../features/profile/profile.data';
 })
 export class PageHeader implements OnInit {
   private readonly profileService = inject(ProfileService);
+
+  // @ViewChild('#loginModal') loginModal: HTMLElement;
+  // @ViewChild('#signupModal') signupModal: HTMLElement = {} as HTMLElement;
 
   userAccount: UserAccount = {} as UserAccount;
   userInfo: UserInfo = {} as UserInfo;
@@ -25,6 +28,19 @@ export class PageHeader implements OnInit {
 
   logOut() {
     localStorage.removeItem('user');
+  }
+
+  onCloseClicked() {
+    document.querySelector('#loginModal')?.classList.remove('is-active');
+    document.querySelector('#signupModal')?.classList.remove('is-active');
+  }
+
+  onLogInClicked() {
+    document.querySelector('#loginModal')?.classList.add('is-active');
+  }
+
+  onSignUpClicked() {
+    document.querySelector('#signupModal')?.classList.add('is-active');
   }
 
   signUp() {
