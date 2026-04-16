@@ -13,11 +13,11 @@ export class ProfileService {
     return this.httpClient.get<UserInfo>('/api/users/me', { params: { email: user.email } });
   }
 
-  login(user: UserAccount): Observable<UserAccount> {
-    return this.httpClient.post<UserAccount>('/api/users/login', user);
+  login(user: UserAccount): Observable<UserInfo> {
+    return this.httpClient.post<UserInfo>('/api/users/login', user);
   }
 
-  signUp(user: UserAccount): Observable<UserAccount> {
-    return this.httpClient.post<UserAccount>('/api/users/register', user);
+  signUp(user: UserAccount): Observable<UserInfo> {
+    return this.httpClient.post<UserInfo>('/api/users/register', user);
   }
 }

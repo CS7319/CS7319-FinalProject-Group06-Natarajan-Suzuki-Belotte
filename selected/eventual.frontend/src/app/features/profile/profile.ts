@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
 import { ProfileService } from './profile.service';
 import { UserInfo } from './profile.data';
 
@@ -8,12 +8,16 @@ import { UserInfo } from './profile.data';
   templateUrl: './profile.html',
   styleUrl: './profile.scss',
 })
-export class Profile {
+export class Profile implements OnInit {
   private readonly profileService = inject(ProfileService);
 
   userInfo: UserInfo = {} as UserInfo;
 
-  getUserInfo() {
-    this.profileService.getUserInfo({} as any).subscribe((userInfo) => (this.userInfo = userInfo));
+  ngOnInit() {
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+
+    if (user.email) {
+      this.profileService.getUserInfo(user).subscribe((info) => (this.userInfo = info));
+    }
   }
 }
