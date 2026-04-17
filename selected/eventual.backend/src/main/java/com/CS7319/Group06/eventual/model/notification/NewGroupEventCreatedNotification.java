@@ -5,8 +5,6 @@ import lombok.Data;
 
 /**
  * Published when a new GROUP-type event is created.
- *
- * @author harininatarajan
  */
 @Data
 @AllArgsConstructor

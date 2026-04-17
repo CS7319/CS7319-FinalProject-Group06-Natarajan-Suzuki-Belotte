@@ -6,8 +6,6 @@ import java.util.List;
 
 /**
  * Service interface for RSVP operations
- *
- * @author harininatarajan
  */
 public interface RsvpService {
 

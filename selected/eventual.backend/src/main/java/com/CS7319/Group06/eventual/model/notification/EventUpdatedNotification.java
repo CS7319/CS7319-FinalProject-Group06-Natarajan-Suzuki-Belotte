@@ -6,8 +6,6 @@ import lombok.Data;
 /**
  * Published when an events details are updated.
  * The listener fetches all RSVPed users and notifies each of them.
- *
- * @author harininatarajan
  */
 @Data
 @AllArgsConstructor

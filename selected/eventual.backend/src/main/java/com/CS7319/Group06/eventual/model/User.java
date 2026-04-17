@@ -11,8 +11,6 @@ import java.util.List;
 
 /**
  * User data object
- *
- * @author harininatarajan
  */
 @Data
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)

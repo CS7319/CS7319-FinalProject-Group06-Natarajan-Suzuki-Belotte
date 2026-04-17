@@ -11,8 +11,6 @@ import java.util.List;
 
 /**
  * Request class for user registration and profile update.
- *
- * @author harininatarajan
  */
 @Data
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)

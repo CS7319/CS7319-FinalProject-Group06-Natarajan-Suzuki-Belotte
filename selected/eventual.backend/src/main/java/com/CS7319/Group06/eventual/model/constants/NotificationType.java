@@ -2,8 +2,6 @@ package com.CS7319.Group06.eventual.model.constants;
 
 /**
  * Types of notifications that can be sent to users.
- *
- * @author harininatarajan
  */
 public enum NotificationType {
     RSVP_CREATED,

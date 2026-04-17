@@ -8,8 +8,6 @@ import java.util.List;
 
 /**
  * Implementation for CategoryService
- *
- * @author harininatarajan
  */
 @Service
 public class CategoryServiceImpl implements CategoryService {

@@ -14,8 +14,6 @@ import org.springframework.context.annotation.Configuration;
 /**
  * Elasticsearch client configuration.
  * Connects to the shared 3-node ES cluster defined in /elasticsearch/docker-compose.yml.
- *
- * @author harininatarajan
  */
 @Data
 @Configuration

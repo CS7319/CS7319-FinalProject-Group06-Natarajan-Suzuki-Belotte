@@ -22,8 +22,6 @@ import java.util.List;
 
 /**
  * Implementation for GroupService
- *
- * @author harininatarajan
  */
 @Service
 public class GroupServiceImpl implements GroupService {

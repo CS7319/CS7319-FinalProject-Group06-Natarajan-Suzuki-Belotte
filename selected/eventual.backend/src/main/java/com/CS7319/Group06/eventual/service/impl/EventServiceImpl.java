@@ -28,8 +28,6 @@ import java.util.UUID;
 
 /**
  * Implementation for EventService
- *
- * @author harininatarajan
  */
 @Service
 public class EventServiceImpl implements EventService {

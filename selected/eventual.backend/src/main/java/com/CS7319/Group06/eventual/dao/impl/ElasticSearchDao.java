@@ -24,8 +24,6 @@ import java.util.List;
 
 /**
  * Elasticsearch implementation of SearchDao.
- *
- * @author harininatarajan
  */
 @Slf4j
 @Repository

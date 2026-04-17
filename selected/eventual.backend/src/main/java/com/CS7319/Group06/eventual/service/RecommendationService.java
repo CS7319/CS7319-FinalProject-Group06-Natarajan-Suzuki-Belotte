@@ -6,8 +6,6 @@ import com.CS7319.Group06.eventual.model.search.SearchResult;
 
 /**
  * Service interface for personalized recommendations.
- *
- * @author harininatarajan
  */
 public interface RecommendationService {
 

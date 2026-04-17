@@ -14,8 +14,6 @@ import java.util.List;
 
 /**
  * JDBC implementation of GroupJoinRequestDao
- *
- * @author harininatarajan
  */
 @Component
 public class JdbcGroupJoinRequestDao implements GroupJoinRequestDao {

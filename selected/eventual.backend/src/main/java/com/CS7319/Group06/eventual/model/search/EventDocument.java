@@ -10,8 +10,6 @@ import java.util.List;
 
 /**
  * Elasticsearch document representing an indexed event.
- *
- * @author harininatarajan
  */
 @Data
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)

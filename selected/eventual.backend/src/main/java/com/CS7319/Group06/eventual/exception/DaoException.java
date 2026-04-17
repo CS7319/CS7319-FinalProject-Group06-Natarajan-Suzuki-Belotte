@@ -1,5 +1,8 @@
 package com.CS7319.Group06.eventual.exception;
 
+/**
+ * DaoException - custom exception for dao errors.
+ */
 public class DaoException extends RuntimeException {
 
     public DaoException() {

@@ -5,8 +5,6 @@ import com.CS7319.Group06.eventual.model.Group;
 
 /**
  * Service for keeping the Elasticsearch index in sync with the PostgreSQL database.
- *
- * @author harininatarajan
  */
 public interface IngestionService {
 

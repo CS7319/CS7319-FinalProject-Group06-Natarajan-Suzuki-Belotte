@@ -6,8 +6,6 @@ import java.util.List;
 
 /**
  * Data access for notifications.
- *
- * @author harininatarajan
  */
 public interface NotificationDao {
 

@@ -8,8 +8,6 @@ import org.springframework.web.multipart.MultipartFile;
 
 /**
  * Service for user operations
- *
- * @author harininatarajan
  */
 public interface UserService {
 

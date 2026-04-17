@@ -5,8 +5,6 @@ import lombok.Data;
 
 /**
  * Published when a user cancels their RSVP.
- *
- * @author harininatarajan
  */
 @Data
 @AllArgsConstructor

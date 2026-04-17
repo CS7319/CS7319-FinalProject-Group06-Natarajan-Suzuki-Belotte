@@ -19,8 +19,6 @@ import java.util.List;
 
 /**
  * JDBC implementation of EventDao
- *
- * @author harininatarajan
  */
 @Component
 public class JdbcEventDao implements EventDao {

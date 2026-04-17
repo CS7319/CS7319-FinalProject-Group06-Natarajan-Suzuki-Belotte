@@ -6,8 +6,6 @@ import lombok.Data;
 
 /**
  * Query parameters for searching groups.
- *
- * @author harininatarajan
  */
 @Data
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)

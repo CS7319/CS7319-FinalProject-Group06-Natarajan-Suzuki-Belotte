@@ -18,8 +18,6 @@ import java.util.Map;
 
 /**
  * Notifications Controller
- *
- * @author harininatarajan
  */
 @RestController
 @RequestMapping("/notifications")

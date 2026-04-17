@@ -9,8 +9,6 @@ import java.util.concurrent.Executor;
 
 /**
  * Async configuration for notifications and indexing data to elastic search
- *
- * @author harininatarajan
  */
 @Configuration
 @EnableAsync

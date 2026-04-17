@@ -4,8 +4,6 @@ import com.CS7319.Group06.eventual.model.User;
 
 /**
  * Data access layer for user
- *
- * @author harininatarajan
  */
 public interface UserDao {
 

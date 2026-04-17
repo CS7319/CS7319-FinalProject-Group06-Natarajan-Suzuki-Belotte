@@ -14,8 +14,6 @@ import org.springframework.web.multipart.MultipartFile;
 /**
  * User Controller
  * Handles registration, login, and profile updates
- *
- * @author harininatarajan
  */
 @RestController
 @RequestMapping("/api/users")

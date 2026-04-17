@@ -13,8 +13,6 @@ import static org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE;
 
 /**
  * Event Controller — create/update restricted to ORGANIZERs only
- *
- * @author harininatarajan
  */
 @RestController
 @RequestMapping("/api/events")

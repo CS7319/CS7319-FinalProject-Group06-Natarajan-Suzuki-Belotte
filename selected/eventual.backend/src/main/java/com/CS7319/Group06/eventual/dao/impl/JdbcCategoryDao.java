@@ -10,8 +10,6 @@ import java.util.List;
 
 /**
  * JDBC implementation of CategoryDao
- *
- * @author harininatarajan
  */
 @Component
 public class JdbcCategoryDao implements CategoryDao {

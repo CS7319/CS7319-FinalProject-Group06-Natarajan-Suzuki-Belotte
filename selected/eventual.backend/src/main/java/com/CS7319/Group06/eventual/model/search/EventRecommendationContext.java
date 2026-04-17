@@ -7,8 +7,6 @@ import java.util.List;
 
 /**
  * User context passed from RecommendationService to RecommendationDao.
- *
- * @author harininatarajan
  */
 @Data
 @Builder

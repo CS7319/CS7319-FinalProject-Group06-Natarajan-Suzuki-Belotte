@@ -9,8 +9,6 @@ import java.util.List;
 
 /**
  * Exposes all available category types for users and events to reference
- *
- * @author harininatarajan
  */
 @RestController
 @RequestMapping("/api/categories")

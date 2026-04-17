@@ -4,8 +4,6 @@ import lombok.Data;
 
 /**
  * Base class for search requests containing common pagination fields.
- *
- * @author harininatarajan
  */
 @Data
 public class BaseSearchRequest {

@@ -5,8 +5,6 @@ import lombok.Data;
 
 /**
  * Published when a user submits a request to join a private group.
- *
- * @author harininatarajan
  */
 @Data
 @AllArgsConstructor

@@ -13,8 +13,6 @@ import java.util.List;
 
 /**
  * Implementation for NotificationService
- *
- * @author harininatarajan
  */
 @Slf4j
 @Service

@@ -5,8 +5,6 @@ import lombok.Data;
 
 /**
  * Request body sent to the Ollama /api/embeddings endpoint.
- *
- * @author harininatarajan
  */
 @Data
 @AllArgsConstructor

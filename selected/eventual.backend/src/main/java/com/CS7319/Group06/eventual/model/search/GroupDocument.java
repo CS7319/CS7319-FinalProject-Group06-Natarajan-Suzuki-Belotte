@@ -8,8 +8,6 @@ import lombok.Data;
 
 /**
  * Elasticsearch document representing an indexed group.
- *
- * @author harininatarajan
  */
 @Data
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)

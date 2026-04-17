@@ -21,8 +21,6 @@ import java.util.List;
 
 /**
  * Implementation for RsvpService
- *
- * @author harininatarajan
  */
 @Service
 public class RsvpServiceImpl implements RsvpService {

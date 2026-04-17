@@ -18,8 +18,6 @@ import java.util.List;
 
 /**
  * JDBC implementation of GroupDao
- *
- * @author harininatarajan
  */
 @Component
 public class JdbcGroupDao implements GroupDao {

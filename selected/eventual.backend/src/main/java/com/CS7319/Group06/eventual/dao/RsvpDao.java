@@ -7,8 +7,6 @@ import java.util.List;
 
 /**
  * Data layer for RSVPs
- *
- * @author harininatarajan
  */
 public interface RsvpDao {
 

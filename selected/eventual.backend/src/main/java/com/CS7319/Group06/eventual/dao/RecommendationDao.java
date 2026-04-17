@@ -8,8 +8,6 @@ import com.CS7319.Group06.eventual.model.search.SearchResult;
 
 /**
  * DAO interface for Elasticsearch recommendation queries.
- *
- * @author harininatarajan
  */
 public interface RecommendationDao {
 

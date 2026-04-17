@@ -14,8 +14,6 @@ import java.util.List;
 
 /**
  * JDBC implementation of NotificationDao.
- *
- * @author harininatarajan
  */
 @Component
 public class JdbcNotificationDao implements NotificationDao {

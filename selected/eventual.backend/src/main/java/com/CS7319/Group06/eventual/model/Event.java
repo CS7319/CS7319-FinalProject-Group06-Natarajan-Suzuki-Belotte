@@ -17,8 +17,6 @@ import java.util.List;
 
 /**
  * Represents an event in the platform
- *
- * @author harininatarajan
  */
 @Data
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
