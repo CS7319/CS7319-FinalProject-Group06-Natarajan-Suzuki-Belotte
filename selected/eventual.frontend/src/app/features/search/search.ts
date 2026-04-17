@@ -1,10 +1,11 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { SearchService } from './search.service';
 import { EventInfo, EventGroup } from '../../shared/data/event.data';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
 @Component({
   selector: 'app-search',
-  imports: [],
+  imports: [RouterLink],
   templateUrl: './search.html',
   styleUrl: './search.scss',
 })
@@ -13,9 +14,14 @@ export class Search implements OnInit {
   socialGroups = signal<EventGroup[]>([]);
 
   private readonly searchService = inject(SearchService);
+  private readonly route = inject(ActivatedRoute);
 
   ngOnInit(): void {
-    this.getSocialEvents('');
+    this.getSocialGroups();
+
+    this.route.queryParams.subscribe((params) => {
+      this.getSocialEvents(params['group']);
+    });
   }
 
   getSocialEvents(query: string): void {
@@ -55,9 +61,16 @@ export class Search implements OnInit {
     });
   }
 
-  getSocialGroups(query: string): void {
-    this.searchService.getGroups(query).subscribe({
-      error: () => {},
+  getSocialGroups(): void {
+    this.searchService.getGroups().subscribe({
+      error: () => {
+        this.socialGroups.set([
+          { id: 1, name: 'Group 1' },
+          { id: 2, name: 'Group 2' },
+          { id: 3, name: 'Group 3' },
+          { id: 4, name: 'Group 4' },
+        ]);
+      },
       next: (groups) => this.socialGroups.set(groups || []),
     });
   }

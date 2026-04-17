@@ -1,8 +1,6 @@
 export interface EventGroup {
   id: number;
-  host: EventHost;
   name: string;
-  description: string;
 }
 
 export interface EventInfo {
