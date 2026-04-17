@@ -70,4 +70,8 @@ public class Event {
     private LocalDateTime createdAt;
 
     private LocalDateTime updatedAt;
+
+    // Vendors for the event
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private List<Integer> vendorIds;
 }
