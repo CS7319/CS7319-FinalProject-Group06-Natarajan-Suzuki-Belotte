@@ -19,10 +19,10 @@
           <div class="buttons">
             @if (userInfo.email) {
               <a class="navbar-item" routerLink="/profile">Profile</a>
-              <a class="button is-primary" (click)="logOut()">Log out</a>
+              <a class="button is-primary" (click)="OnLogOutClicked()">Log Out</a>
             } @else {
-              <a class="button is-primary" (click)="onSignUpClicked()">Sign up</a>
-              <a class="button is-light" (click)="onLogInClicked()">Log in</a>
+              <a class="button is-primary" (click)="onSignUpClicked()">Sign Up</a>
+              <a class="button is-light" (click)="onLogInClicked()">Log In</a>
             }
           </div>
         </div>
@@ -38,12 +38,36 @@
       <p class="modal-card-title">Log In</p>
       <button class="delete" aria-label="close" (click)="onCloseClicked()"></button>
     </header>
-    <section class="modal-card-body">LOGIN</section>
-    <footer class="modal-card-foot">
-      <div class="buttons">
-        <button class="button is-success">Log in</button>
+    <section class="modal-card-body">
+      <div class="field">
+        <label class="label" for="login-email">Email</label>
+        <div class="control">
+          <input
+            class="input"
+            id="login-email"
+            type="text"
+            placeholder="student@smu.edu"
+            [formControl]="userAccount.email"
+          />
+        </div>
       </div>
-    </footer>
+
+      <div class="field">
+        <label class="label" for="login-password">Password</label>
+        <div class="control">
+          <input
+            class="input"
+            id="login-password"
+            type="text"
+            [formControl]="userAccount.password"
+          />
+        </div>
+      </div>
+
+      <div class="buttons">
+        <button class="button is-success" (click)="onLogInFormSubmitted()">Log in</button>
+      </div>
+    </section>
   </div>
 </div>
 
@@ -54,11 +78,35 @@
       <p class="modal-card-title">Sign Up</p>
       <button class="delete" aria-label="close" (click)="onCloseClicked()"></button>
     </header>
-    <section class="modal-card-body">SIGNUP</section>
-    <footer class="modal-card-foot">
-      <div class="buttons">
-        <button class="button is-success">Sign up</button>
+    <section class="modal-card-body">
+      <div class="field">
+        <label class="label" for="signup-email">Email</label>
+        <div class="control">
+          <input
+            class="input"
+            id="signup-email"
+            type="text"
+            placeholder="student@smu.edu"
+            [formControl]="userAccount.email"
+          />
+        </div>
       </div>
-    </footer>
+
+      <div class="field">
+        <label class="label" for="signup-password">Password</label>
+        <div class="control">
+          <input
+            class="input"
+            id="signup-password"
+            type="text"
+            [formControl]="userAccount.password"
+          />
+        </div>
+      </div>
+
+      <div class="buttons">
+        <button class="button is-success" (click)="onSignUpFormSubmitted()">Sign up</button>
+      </div>
+    </section>
   </div>
 </div>
