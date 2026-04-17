@@ -49,8 +49,7 @@ export class PageHeader implements OnInit {
     this.onCloseClicked();
     this.profileService.login(this.userAccount).subscribe({
       error: () => {
-        this.userInfo.set({ avatar: '', email: 'hello@smu.edu', location: '', name: '' });
-        console.log(this.userInfo);
+        this.handleUserInfo({ avatar: '', email: 'hello@smu.edu', location: '', name: '' });
       },
       next: this.handleUserInfo,
     });
@@ -66,8 +65,7 @@ export class PageHeader implements OnInit {
     this.onCloseClicked();
     this.profileService.signUp(this.userAccount).subscribe({
       error: () => {
-        this.userInfo.set({ avatar: '', email: 'hello@smu.edu', location: '', name: '' });
-        console.log(this.userInfo);
+        this.handleUserInfo({ avatar: '', email: 'hello@smu.edu', location: '', name: '' });
       },
       next: this.handleUserInfo,
     });
