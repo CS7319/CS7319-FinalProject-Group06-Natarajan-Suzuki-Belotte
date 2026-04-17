@@ -1,39 +1,135 @@
-INSERT INTO users (email, name, pronoun, password_hash, role, location, about_me, category_types, group_ids)
-VALUES
-('alice@example.com', 'Alice Johnson', 'she/her', 'hash1', 'USER', 'Dallas, TX', 'Loves music and tech', ARRAY['Music','Technology'], ARRAY[1]),
-('bob@example.com', 'Bob Smith', 'he/him', 'hash2', 'USER', 'Plano, TX', 'Fitness enthusiast', ARRAY['Sports','Health & Fitness'], ARRAY[1,2]),
-('carol@example.com', 'Carol Lee', 'they/them', 'hash3', 'ADMIN', 'Richardson, TX', 'Organizer of events', ARRAY['Business & Networking'], ARRAY[1,2]),
-('dave@example.com', 'Dave Kim', 'he/him', 'hash4', 'USER', 'Allen, TX', 'Food lover', ARRAY['Food & Drink'], ARRAY[2]);
+BEGIN;
 
-INSERT INTO groups (id, name, description, creator_email, owner_email, member_emails, modified_by)
-VALUES
-(1, 'Tech Enthusiasts', 'Group for tech lovers', 'carol@example.com', 'carol@example.com',
- ARRAY['alice@example.com','bob@example.com','carol@example.com'], 'carol@example.com'),
-(2, 'Fitness Club', 'Stay fit together', 'bob@example.com', 'bob@example.com',
- ARRAY['bob@example.com','carol@example.com','dave@example.com'], 'bob@example.com');
+-- =========================================================
+-- NAME POOLS (procedural building blocks)
+-- =========================================================
+WITH first_names AS (
+    SELECT unnest(ARRAY[
+        'Nova','Milo','Iris','Orion','Sadie','Felix','Luna','Ethan','Ava','Noah',
+        'Zoe','Leo','Maya','Ezra','Nina','Kai','Jade','Theo','Ruby','Owen'
+    ]) AS name
+),
+last_names AS (
+    SELECT unnest(ARRAY[
+        'Ramirez','Bennett','Nguyen','Lee','Turner','Wright','Carter','Kim','Patel','Lopez',
+        'Reed','Bailey','Rivera','Cooper','Morgan','Bell','Murphy','Foster','Ward','Brooks'
+    ]) AS name
+),
 
-INSERT INTO events (id, title, description, location, start_datetime, end_datetime, organizer_email, capacity, event_type, group_id, category_types, modified_by)
-VALUES
-(1, 'AI Meetup', 'Discuss latest in AI', 'Dallas, TX',
- '2026-05-01 18:00', '2026-05-01 20:00',
- 'carol@example.com', 50, 'GROUP', 1, ARRAY['Technology'], 'carol@example.com'),
-(2, 'Morning Yoga', 'Start your day right', 'Plano, TX',
- '2026-05-02 07:00', '2026-05-02 08:00',
- 'bob@example.com', 20, 'GROUP', 2, ARRAY['Health & Fitness'], 'bob@example.com'),
-(3, 'Food Festival', 'Try amazing food', 'Richardson, TX',
- '2026-05-03 12:00', '2026-05-03 16:00',
- 'alice@example.com', 0, 'PUBLIC', NULL, ARRAY['Food & Drink'], 'alice@example.com');
+-- =========================================================
+-- USERS (N = 50)
+-- =========================================================
+generated_users AS (
+    INSERT INTO users (
+        email, name, pronoun, password_hash, role,
+        location, category_types
+    )
+    SELECT
+        lower(fn.name || '.' || ln.name || i || '@example.com'),
+        fn.name || ' ' || ln.name,
+        (ARRAY['he/him','she/her','they/them'])[1 + floor(random()*3)],
+        'hash_' || i,
+        CASE WHEN random() < 0.1 THEN 'ADMIN' ELSE 'USER' END,
+        (ARRAY['Dallas, TX','Plano, TX','Richardson, TX','Allen, TX'])[1 + floor(random()*4)],
+        ARRAY[
+            (ARRAY['Music','Sports','Technology','Food & Drink','Gaming'])[1 + floor(random()*5)]
+        ]
+    FROM generate_series(1,50) i
+    CROSS JOIN LATERAL (
+        SELECT name FROM first_names ORDER BY random() LIMIT 1
+    ) fn
+    CROSS JOIN LATERAL (
+        SELECT name FROM last_names ORDER BY random() LIMIT 1
+    ) ln
+    RETURNING email
+),
 
+-- =========================================================
+-- GROUPS (N = 10)
+-- =========================================================
+generated_groups AS (
+    INSERT INTO groups (
+        name, description, creator_email, owner_email, member_emails
+    )
+    SELECT
+        'Group ' || i || ' - ' ||
+            (ARRAY['Tech','Fitness','Food','Gaming','Travel'])[1 + floor(random()*5)],
+        'Auto-generated group #' || i,
+        u.email,
+        u.email,
+        ARRAY[u.email]
+    FROM generate_series(1,10) i
+    JOIN LATERAL (
+        SELECT email FROM users ORDER BY random() LIMIT 1
+    ) u ON true
+    RETURNING id, creator_email
+),
+
+-- =========================================================
+-- EVENTS (N = 30)
+-- =========================================================
+generated_events AS (
+    INSERT INTO events (
+        title, description, location,
+        start_datetime, end_datetime,
+        organizer_email, event_type, group_id
+    )
+    SELECT
+        (ARRAY['Meetup','Workshop','Hangout','Session','Night'])[1 + floor(random()*5)]
+            || ' #' || i,
+        'Generated event ' || i,
+        (ARRAY['Dallas','Plano','Richardson'])[1 + floor(random()*3)],
+        NOW() + (i || ' hours')::interval,
+        NOW() + ((i+2) || ' hours')::interval,
+        u.email,
+        CASE WHEN random() < 0.5 THEN 'GROUP' ELSE 'PUBLIC' END,
+        g.id
+    FROM generate_series(1,30) i
+    JOIN LATERAL (
+        SELECT email FROM users ORDER BY random() LIMIT 1
+    ) u ON true
+    LEFT JOIN LATERAL (
+        SELECT id FROM groups ORDER BY random() LIMIT 1
+    ) g ON true
+    RETURNING id
+)
+
+-- =========================================================
+-- RSVP (random participation)
+-- =========================================================
 INSERT INTO rsvp (event_id, user_email, status)
-VALUES
-(1, 'alice@example.com', 'GOING'),
-(1, 'bob@example.com', 'GOING'),
-(2, 'carol@example.com', 'GOING'),
-(2, 'dave@example.com', 'WAITLISTED'),
-(3, 'alice@example.com', 'GOING'),
-(3, 'dave@example.com', 'GOING');
+SELECT
+    e.id,
+    u.email,
+    (ARRAY['GOING','WAITLISTED','CANCELLED'])[1 + floor(random()*3)]
+FROM events e
+JOIN users u ON random() < 0.2;  -- ~20% fill rate
 
+-- =========================================================
+-- GROUP JOIN REQUESTS
+-- =========================================================
 INSERT INTO group_join_requests (group_id, requester_email, status)
-VALUES
-(1, 'dave@example.com', 'PENDING'),
-(2, 'alice@example.com', 'APPROVED');
+SELECT
+    g.id,
+    u.email,
+    (ARRAY['PENDING','APPROVED','REJECTED'])[1 + floor(random()*3)]
+FROM groups g
+JOIN users u ON random() < 0.15;
+
+-- =========================================================
+-- NOTIFICATIONS (derived)
+-- =========================================================
+INSERT INTO notifications (
+    recipient_email, type, title, message, reference_id, reference_type
+)
+SELECT
+    u.email,
+    'EVENT_REMINDER',
+    'Reminder: Event #' || e.id,
+    'Don''t forget your upcoming event!',
+    e.id::text,
+    'EVENT'
+FROM users u
+JOIN events e ON random() < 0.1;
+
+COMMIT;
