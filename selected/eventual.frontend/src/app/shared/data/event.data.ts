@@ -1,12 +1,3 @@
-export interface EventInfo {
-  id: number;
-  host: EventHost;
-  name: string;
-  date: string;
-  location: string;
-  description: string;
-}
-
 export interface EventGroup {
   id: number;
   host: EventHost;
@@ -14,7 +5,16 @@ export interface EventGroup {
   description: string;
 }
 
+export interface EventInfo {
+  id: number;
+  hosts: EventHost[];
+  name: string;
+  date: Date;
+  location: string;
+  description: string;
+}
+
 export interface EventHost {
-  handle: string;
+  email: string;
   name: string;
 }
