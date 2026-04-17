@@ -17,7 +17,7 @@
       <div class="navbar-end">
         <div class="navbar-item">
           <div class="buttons">
-            @if (userInfo.email) {
+            @if (userInfo().email) {
               <a class="navbar-item" routerLink="/profile">Profile</a>
               <a class="button is-primary" (click)="OnLogOutClicked()">Log Out</a>
             } @else {
@@ -36,7 +36,7 @@
   <div class="modal-card">
     <header class="modal-card-head">
       <p class="modal-card-title">Log In</p>
-      <button class="delete" aria-label="close" (click)="onCloseClicked()"></button>
+      <button class="delete is-large" aria-label="close" (click)="onCloseClicked()"></button>
     </header>
     <section class="modal-card-body">
       <div class="field">
@@ -58,16 +58,15 @@
           <input
             class="input"
             id="login-password"
-            type="text"
+            type="password"
             [formControl]="userAccount.password"
           />
         </div>
       </div>
-
-      <div class="buttons">
-        <button class="button is-success" (click)="onLogInFormSubmitted()">Log in</button>
-      </div>
     </section>
+    <footer class="modal-card-foot is-justify-content-center">
+      <button class="button is-medium is-success" (click)="onLogInFormSubmitted()">Log In</button>
+    </footer>
   </div>
 </div>
 
@@ -76,7 +75,7 @@
   <div class="modal-card">
     <header class="modal-card-head">
       <p class="modal-card-title">Sign Up</p>
-      <button class="delete" aria-label="close" (click)="onCloseClicked()"></button>
+      <button class="delete is-large" aria-label="close" (click)="onCloseClicked()"></button>
     </header>
     <section class="modal-card-body">
       <div class="field">
@@ -98,15 +97,14 @@
           <input
             class="input"
             id="signup-password"
-            type="text"
+            type="password"
             [formControl]="userAccount.password"
           />
         </div>
       </div>
-
-      <div class="buttons">
-        <button class="button is-success" (click)="onSignUpFormSubmitted()">Sign up</button>
-      </div>
     </section>
+    <footer class="modal-card-foot is-justify-content-center">
+      <button class="button is-medium is-success" (click)="onSignUpFormSubmitted()">Sign Up</button>
+    </footer>
   </div>
 </div>
