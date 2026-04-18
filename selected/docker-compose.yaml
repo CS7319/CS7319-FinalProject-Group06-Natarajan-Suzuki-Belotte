@@ -1,0 +1,41 @@
+services:
+  backend:
+    build:
+      dockerfile: backend.dockerfile
+    container_name: eventual-backend
+    depends_on:
+      - database
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/appdb
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: CS7319.Group06.NSB
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_PROFILES_ACTIVE: docker
+    ports:
+      - "4201:8080"
+
+  database:
+    image: postgres:17
+    container_name: postgres_db
+    restart: always
+    environment:
+      POSTGRES_DB: eventualdb
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: CS7319.Group06.NSB
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./eventual.database/db_ddl.sql:/docker-entrypoint-initdb.d/db_ddl.sql
+
+  frontend:
+    build:
+      dockerfile: frontend.dockerfile
+    container_name: eventual-frontend
+    depends_on:
+      - backend
+    ports:
+      - "4200:80"
+
+volumes:
+  postgres_data:

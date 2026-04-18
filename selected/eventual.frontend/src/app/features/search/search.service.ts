@@ -13,7 +13,7 @@ export class SearchService {
     return this.httpClient.get<EventInfo[]>('/api/search/events', { params: { query } });
   }
 
-  getGroups(query: string): Observable<EventGroup[]> {
-    return this.httpClient.get<EventGroup[]>('/api/search/groups', { params: { query } });
+  getGroups(): Observable<EventGroup[]> {
+    return this.httpClient.get<EventGroup[]>('/api/search/groups');
   }
 }
