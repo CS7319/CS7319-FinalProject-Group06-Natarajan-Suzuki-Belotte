@@ -39,7 +39,7 @@ public class NotificationServiceKafkaConsumer {
         this.objectMapper = objectMapper;
     }
 
-    @KafkaListener(topics = "rsvp-created", groupId = "notification-service")
+    @KafkaListener(topics = "${kafka.topics.rsvp-created}", groupId = "notification-service")
     public void onRsvpCreated(Object payload) {
         RsvpCreatedMessage msg = objectMapper.convertValue(payload, RsvpCreatedMessage.class);
         send(msg.getOrganizerEmail(), NotificationType.RSVP_CREATED,
@@ -48,7 +48,7 @@ public class NotificationServiceKafkaConsumer {
                 String.valueOf(msg.getEventId()), NotificationReferenceType.EVENT);
     }
 
-    @KafkaListener(topics = "rsvp-cancelled", groupId = "notification-service")
+    @KafkaListener(topics = "${kafka.topics.rsvp-cancelled}", groupId = "notification-service")
     public void onRsvpCancelled(Object payload) {
         RsvpCancelledMessage msg = objectMapper.convertValue(payload, RsvpCancelledMessage.class);
         send(msg.getOrganizerEmail(), NotificationType.RSVP_CANCELLED,
@@ -57,7 +57,7 @@ public class NotificationServiceKafkaConsumer {
                 String.valueOf(msg.getEventId()), NotificationReferenceType.EVENT);
     }
 
-    @KafkaListener(topics = "event-updated", groupId = "notification-service")
+    @KafkaListener(topics = "${kafka.topics.event-updated}", groupId = "notification-service")
     public void onEventUpdated(Object payload) {
         EventUpdatedMessage msg = objectMapper.convertValue(payload, EventUpdatedMessage.class);
         if (msg.getRsvpedEmails() == null) return;
@@ -68,7 +68,7 @@ public class NotificationServiceKafkaConsumer {
                         String.valueOf(msg.getEventId()), NotificationReferenceType.EVENT));
     }
 
-    @KafkaListener(topics = "event-deleted", groupId = "notification-service")
+    @KafkaListener(topics = "${kafka.topics.event-deleted}", groupId = "notification-service")
     public void onEventDeleted(Object payload) {
         EventDeletedMessage msg = objectMapper.convertValue(payload, EventDeletedMessage.class);
         if (msg.getRsvpedEmails() == null) return;
@@ -79,7 +79,7 @@ public class NotificationServiceKafkaConsumer {
                         String.valueOf(msg.getEventId()), NotificationReferenceType.EVENT));
     }
 
-    @KafkaListener(topics = "event-created", groupId = "notification-service")
+    @KafkaListener(topics = "${kafka.topics.event-created}", groupId = "notification-service")
     public void onEventCreated(Object payload) {
         EventCreatedMessage msg = objectMapper.convertValue(payload, EventCreatedMessage.class);
         // Only notify for GROUP events
@@ -98,7 +98,7 @@ public class NotificationServiceKafkaConsumer {
                                 String.valueOf(msg.getEventId()), NotificationReferenceType.EVENT));
     }
 
-    @KafkaListener(topics = "join-request-submitted", groupId = "notification-service")
+    @KafkaListener(topics = "${kafka.topics.join-request-submitted}", groupId = "notification-service")
     public void onJoinRequestSubmitted(Object payload) {
         JoinRequestSubmittedMessage msg = objectMapper.convertValue(payload, JoinRequestSubmittedMessage.class);
         send(msg.getOwnerEmail(), NotificationType.JOIN_REQUEST_SUBMITTED,
@@ -107,7 +107,7 @@ public class NotificationServiceKafkaConsumer {
                 String.valueOf(msg.getRequestId()), NotificationReferenceType.JOIN_REQUEST);
     }
 
-    @KafkaListener(topics = "join-request-approved", groupId = "notification-service")
+    @KafkaListener(topics = "${kafka.topics.join-request-approved}", groupId = "notification-service")
     public void onJoinRequestApproved(Object payload) {
         JoinRequestApprovedMessage msg = objectMapper.convertValue(payload, JoinRequestApprovedMessage.class);
         send(msg.getRequesterEmail(), NotificationType.JOIN_REQUEST_APPROVED,
@@ -116,7 +116,7 @@ public class NotificationServiceKafkaConsumer {
                 String.valueOf(msg.getGroupId()), NotificationReferenceType.GROUP);
     }
 
-    @KafkaListener(topics = "join-request-rejected", groupId = "notification-service")
+    @KafkaListener(topics = "${kafka.topics.join-request-rejected}", groupId = "notification-service")
     public void onJoinRequestRejected(Object payload) {
         JoinRequestRejectedMessage msg = objectMapper.convertValue(payload, JoinRequestRejectedMessage.class);
         send(msg.getRequesterEmail(), NotificationType.JOIN_REQUEST_REJECTED,

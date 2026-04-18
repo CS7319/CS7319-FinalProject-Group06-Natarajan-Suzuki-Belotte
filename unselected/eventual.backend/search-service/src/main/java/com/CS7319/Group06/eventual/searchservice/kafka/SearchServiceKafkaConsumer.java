@@ -27,7 +27,7 @@ public class SearchServiceKafkaConsumer {
     private final ObjectMapper objectMapper;
 
     // Listen for event-created messages and index them
-    @KafkaListener(topics = "event-created", groupId = "search-service")
+    @KafkaListener(topics = "${kafka.topics.event-created}", groupId = "search-service")
     public void onEventCreated(Object payload) {
         try {
             EventCreatedMessage message = objectMapper.convertValue(payload, EventCreatedMessage.class);
@@ -52,7 +52,7 @@ public class SearchServiceKafkaConsumer {
         }
     }
 
-    @KafkaListener(topics = "event-updated", groupId = "search-service")
+    @KafkaListener(topics = "${kafka.topics.event-updated}", groupId = "search-service")
     public void onEventUpdated(Object payload) {
         try {
             EventUpdatedMessage message = objectMapper.convertValue(payload, EventUpdatedMessage.class);
@@ -77,7 +77,7 @@ public class SearchServiceKafkaConsumer {
         }
     }
 
-    @KafkaListener(topics = "event-deleted", groupId = "search-service")
+    @KafkaListener(topics = "${kafka.topics.event-deleted}", groupId = "search-service")
     public void onEventDeleted(Object payload) {
         try {
             EventDeletedMessage message = objectMapper.convertValue(payload, EventDeletedMessage.class);
@@ -88,7 +88,7 @@ public class SearchServiceKafkaConsumer {
         }
     }
 
-    @KafkaListener(topics = "group-indexed", groupId = "search-service")
+    @KafkaListener(topics = "${kafka.topics.group-indexed}", groupId = "search-service")
     public void onGroupIndexed(Object payload) {
         try {
             GroupIndexedMessage message = objectMapper.convertValue(payload, GroupIndexedMessage.class);
@@ -107,7 +107,7 @@ public class SearchServiceKafkaConsumer {
         }
     }
 
-    @KafkaListener(topics = "group-deleted", groupId = "search-service")
+    @KafkaListener(topics = "${kafka.topics.group-deleted}", groupId = "search-service")
     public void onGroupDeleted(Object payload) {
         try {
             GroupDeletedMessage message = objectMapper.convertValue(payload, GroupDeletedMessage.class);

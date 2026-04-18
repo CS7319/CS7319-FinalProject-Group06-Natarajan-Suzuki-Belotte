@@ -2,6 +2,8 @@ version: '3.8'
 
 # Eventual — Microservices Architecture
 # PostgreSQL is expected to be running locally on the host machine.
+# Each service connects to its own database — create them before starting:
+#   createdb eventual_users eventual_events eventual_notifications eventual_vendors eventual_support
 
 services:
 
@@ -116,7 +118,7 @@ services:
     networks:
       - microservices-net
 
-  # User Service (port 8082)
+  # User Service (port 8082) — database: eventual_users
   user-service:
     build:
       context: ./eventual.backend
@@ -125,7 +127,7 @@ services:
     ports:
       - "8082:8082"
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://host.docker.internal:5432/eventual
+      SPRING_DATASOURCE_URL: jdbc:postgresql://host.docker.internal:5432/eventual_users
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: postgres
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
@@ -139,7 +141,7 @@ services:
       - microservices-net
     restart: on-failure
 
-  # Event Service (port 8081)
+  # Event Service (port 8081) — database: eventual_events
   event-service:
     build:
       context: ./eventual.backend
@@ -148,7 +150,7 @@ services:
     ports:
       - "8081:8081"
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://host.docker.internal:5432/eventual
+      SPRING_DATASOURCE_URL: jdbc:postgresql://host.docker.internal:5432/eventual_events
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: postgres
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
@@ -165,7 +167,7 @@ services:
       - microservices-net
     restart: on-failure
 
-  # Search Service (port 8084)
+  # Search Service (port 8084) — no relational database (uses Elasticsearch)
   search-service:
     build:
       context: ./eventual.backend
@@ -192,7 +194,7 @@ services:
       - microservices-net
     restart: on-failure
 
-  # Notification Service (port 8083)
+  # Notification Service (port 8083) — database: eventual_notifications
   notification-service:
     build:
       context: ./eventual.backend
@@ -201,7 +203,7 @@ services:
     ports:
       - "8083:8083"
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://host.docker.internal:5432/eventual
+      SPRING_DATASOURCE_URL: jdbc:postgresql://host.docker.internal:5432/eventual_notifications
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: postgres
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
@@ -215,7 +217,7 @@ services:
       - microservices-net
     restart: on-failure
 
-  # Vendor Service (port 8086)
+  # Vendor Service (port 8086) — database: eventual_vendors
   vendor-service:
     build:
       context: ./eventual.backend
@@ -224,14 +226,14 @@ services:
     ports:
       - "8086:8086"
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://host.docker.internal:5432/eventual
+      SPRING_DATASOURCE_URL: jdbc:postgresql://host.docker.internal:5432/eventual_vendors
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: postgres
     networks:
       - microservices-net
     restart: on-failure
 
-  # Support Service (port 8085)
+  # Support Service (port 8085) — database: eventual_support
   support-service:
     build:
       context: ./eventual.backend
@@ -240,7 +242,7 @@ services:
     ports:
       - "8085:8085"
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://host.docker.internal:5432/eventual
+      SPRING_DATASOURCE_URL: jdbc:postgresql://host.docker.internal:5432/eventual_support
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: postgres
     networks:
