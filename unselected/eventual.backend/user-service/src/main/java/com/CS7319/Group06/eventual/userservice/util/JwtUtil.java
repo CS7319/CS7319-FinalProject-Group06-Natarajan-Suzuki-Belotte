@@ -9,6 +9,9 @@ import org.springframework.stereotype.Component;
 import javax.crypto.SecretKey;
 import java.util.Date;
 
+/**
+ * JwtUtil - utility class for jwt operations.
+ */
 @Component
 public class JwtUtil {
 

@@ -12,6 +12,9 @@ import reactor.core.publisher.Mono;
 
 import java.util.List;
 
+/**
+ * JwtAuthFilter - filter for jwt auth processing.
+ */
 @Component
 public class JwtAuthFilter implements GlobalFilter, Ordered {
 
@@ -49,11 +52,13 @@ public class JwtAuthFilter implements GlobalFilter, Ordered {
             return exchange.getResponse().setComplete();
         }
 
-        // Forward the authenticated username as a header to downstream services
+        // Forward the authenticated username and role as headers to downstream services
         String username = jwtUtil.extractUsername(token);
+        String role = jwtUtil.extractRole(token);
         ServerWebExchange mutatedExchange = exchange.mutate()
                 .request(exchange.getRequest().mutate()
                         .header("X-Authenticated-User", username)
+                        .header("X-User-Role", role)
                         .build())
                 .build();
 

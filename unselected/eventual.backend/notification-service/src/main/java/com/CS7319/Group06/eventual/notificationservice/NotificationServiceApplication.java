@@ -3,6 +3,9 @@ package com.CS7319.Group06.eventual.notificationservice;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
+/**
+ * NotificationServiceApplication - Spring Boot application entry point.
+ */
 @SpringBootApplication
 public class NotificationServiceApplication {
 

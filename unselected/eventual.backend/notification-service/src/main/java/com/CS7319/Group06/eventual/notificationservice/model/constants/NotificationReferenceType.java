@@ -1,0 +1,8 @@
+package com.CS7319.Group06.eventual.notificationservice.model.constants;
+
+/**
+ * The type of entity a notification is referring to.
+ */
+public enum NotificationReferenceType {
+    EVENT, GROUP, JOIN_REQUEST
+}
