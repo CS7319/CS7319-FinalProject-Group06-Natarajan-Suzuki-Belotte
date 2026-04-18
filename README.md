@@ -11,8 +11,8 @@ Eventual is a full-featured event management platform built and evaluated under 
 
 | Directory | Architecture | Description |
 |-----------|-------------|-------------|
-| `selected/` | **Layered (N-Tier)** | Single Spring Boot monolith with PostgreSQL, Elasticsearch (hybrid search), and Ollama (semantic embeddings) |
-| `unselected/` | **Microservices** | API Gateway + four independent services (User, Event, Search, Notification) communicating via REST and Kafka |
+| `selected/` | **Layered (N-Tier)** | Single Spring Boot monolith with one shared PostgreSQL database (`eventual`), Elasticsearch (hybrid search), and Ollama (semantic embeddings) |
+| `unselected/` | **Microservices** | API Gateway + six independent services (User, Event, Search, Notification, Vendor, Support), each with its own PostgreSQL database, communicating via REST and Kafka |
 
 ---
 
@@ -30,14 +30,20 @@ Eventual is a full-featured event management platform built and evaluated under 
 
 #### Local PostgreSQL setup
 
-Make sure your local PostgreSQL instance has the `eventual` database and schema loaded before starting Docker:
+The selected architecture uses a **single database** (`eventual`) shared by all layers of the monolith.
 
 ```bash
-# Create the database (if it doesn't exist yet)
-psql -U postgres -c "CREATE DATABASE eventual;"
+# 1. Connect to PostgreSQL as the superuser
+psql -U postgres -d postgres
 
-# Load schema and seed data
+# 2. Create the database (run inside the psql prompt, then exit)
+CREATE DATABASE eventual;
+\q
+
+# 3. Load the schema DDL
 psql -U postgres -d eventual -f selected/eventual.database/schema.sql
+
+# 4. (Optional) Load seed data
 psql -U postgres -d eventual -f selected/eventual.database/db_dml.sql
 ```
 
@@ -76,6 +82,62 @@ docker compose down -v
 
 ---
 
+### Authentication — JWT
+
+All API endpoints except **Register** and **Login** require a valid JWT token.
+
+#### Step 1 — Register a user
+
+```
+POST http://localhost:8080/api/users/register
+Content-Type: multipart/form-data
+
+email=alice@example.com
+password=secret123
+firstName=Alice
+lastName=Example
+role=ORGANIZER        ← valid values: ORGANIZER | PARTICIPANT
+```
+
+#### Step 2 — Log in to get a token
+
+```
+POST http://localhost:8080/api/users/login
+Content-Type: application/json
+
+{
+  "email": "alice@example.com",
+  "password": "secret123"
+}
+```
+
+**Response:**
+
+```json
+{
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+}
+```
+
+#### Step 3 — Send the token with every subsequent request
+
+Add an `Authorization` header to every request:
+
+```
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+```
+
+| Client | Where to set it |
+|--------|----------------|
+| Insomnia | Request → **Auth** tab → **Bearer Token** → paste the token |
+| Postman | Request → **Authorization** tab → Type: **Bearer Token** → paste the token |
+| curl | `-H "Authorization: Bearer <token>"` |
+| Swagger UI | Click **Authorize** (🔒) at the top → enter `Bearer <token>` |
+
+> **Using the provided collections**: The Postman collection (`eventual_selected.postman.json`) automatically saves the token from the login response to a collection variable and attaches it to all subsequent requests. In Insomnia, set the `token` environment variable after logging in.
+
+---
+
 ### Service Ports
 
 | Service | Port | URL | Runs in |
@@ -109,12 +171,6 @@ psql -h localhost -p 5432 -U postgres -d eventual
 | Database | `eventual` |
 | Username | `postgres` |
 | Password | `postgres1` *(or your local password)* |
-
-#### IntelliJ IDEA / DataGrip
-
-1. Open **Database** tool window → **+** → **Data Source** → **PostgreSQL**
-2. Fill in the fields from the table above
-3. Click **Test Connection** — it should succeed as long as your local PostgreSQL is running
 
 ---
 
@@ -166,14 +222,35 @@ GET /events/_search
 
 #### Local PostgreSQL setup
 
-```bash
-# Create the database (if it doesn't exist yet)
-psql -U postgres -c "CREATE DATABASE eventual;"
+Each microservice owns its own isolated database — there is no shared database. Create all five databases and load their schemas before starting Docker.
 
-# Load schema and seed data
-psql -U postgres -d eventual -f unselected/eventual.database/schema.sql
-psql -U postgres -d eventual -f unselected/eventual.database/db_dml.sql
+```bash
+# 1. Connect as the superuser and create all five databases
+psql -U postgres -d postgres <<'SQL'
+CREATE DATABASE eventual_users;
+CREATE DATABASE eventual_events;
+CREATE DATABASE eventual_notifications;
+CREATE DATABASE eventual_vendors;
+CREATE DATABASE eventual_support;
+SQL
+
+# 2. Load each service's schema
+psql -U postgres -d eventual_users        -f unselected/eventual.database/user-service.sql
+psql -U postgres -d eventual_events       -f unselected/eventual.database/event-service.sql
+psql -U postgres -d eventual_notifications -f unselected/eventual.database/notification-service.sql
+psql -U postgres -d eventual_vendors      -f unselected/eventual.database/vendor-service.sql
+psql -U postgres -d eventual_support      -f unselected/eventual.database/support-service.sql
 ```
+
+| Database | Owned by | Tables |
+|----------|----------|--------|
+| `eventual_users` | user-service | `users`, `categories`, `groups`, `group_join_requests` |
+| `eventual_events` | event-service | `events`, `rsvp` |
+| `eventual_notifications` | notification-service | `notifications` |
+| `eventual_vendors` | vendor-service | `vendors`, `vendor_reviews`, `event_vendors` |
+| `eventual_support` | support-service | `support_tickets` |
+
+> Cross-service references (e.g. an event's `organizer_email`, a ticket's `submitted_by`) are stored as plain `varchar` columns — there are **no foreign keys across databases**. Consistency is enforced at the application layer.
 
 ---
 
@@ -207,15 +284,64 @@ docker compose down -v
 
 ---
 
+### Authentication — JWT
+
+Authentication works the same as the selected architecture. The API Gateway validates the JWT on every incoming request before forwarding it to the appropriate service. Only **Register** and **Login** are unauthenticated.
+
+#### Step 1 — Register a user
+
+```
+POST http://localhost:8080/api/users/register
+Content-Type: multipart/form-data
+
+email=alice@example.com
+password=secret123
+firstName=Alice
+lastName=Example
+role=ORGANIZER        ← valid values: ORGANIZER | PARTICIPANT
+```
+
+#### Step 2 — Log in to get a token
+
+```
+POST http://localhost:8080/api/users/login
+Content-Type: application/json
+
+{
+  "email": "alice@example.com",
+  "password": "secret123"
+}
+```
+
+**Response:**
+
+```json
+{
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+}
+```
+
+#### Step 3 — Send the token with every subsequent request
+
+```
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+```
+
+> **Using the provided collections**: Import `eventual_selected.postman.json` (Postman) or `eventual_selected.insomnia.json` (Insomnia) from the project root. Both collections are pre-configured with auth headers. The Postman collection automatically saves the token after login.
+
+---
+
 ### Services
 
 | Service | Container | Port | Responsibility | Runs in |
 |---------|-----------|------|---------------|---------|
 | API Gateway | `eventual-api-gateway` | 8080 | JWT validation, request routing | Docker |
-| User Service | `eventual-user-service` | 8082 | Users, groups, authentication | Docker |
+| User Service | `eventual-user-service` | 8082 | Users, groups, join requests, authentication | Docker |
 | Event Service | `eventual-event-service` | 8081 | Events, RSVPs | Docker |
 | Search Service | `eventual-search-service` | 8084 | Elasticsearch indexing, hybrid search, recommendations | Docker |
 | Notification Service | `eventual-notification-service` | 8083 | In-app notifications via Kafka | Docker |
+| Vendor Service | `eventual-vendor-service` | 8085 | Vendors, vendor reviews, event–vendor assignments | Docker |
+| Support Service | `eventual-support-service` | 8086 | Support tickets | Docker |
 | Kafka | `eventual-kafka` | 9092 | Async messaging (KRaft mode) | Docker |
 | Elasticsearch (es01) | `eventual-es01` | 9200 | Search index — node 1 (exposed) | Docker |
 | Elasticsearch (es02) | `eventual-es02` | — | Search index — node 2 (internal) | Docker |
@@ -226,10 +352,35 @@ docker compose down -v
 
 ---
 
-### Communication
+### Inter-Service Communication
 
-- **Synchronous**: REST via Spring `RestClient` (service-to-service internal calls through container names)
-- **Asynchronous**: Apache Kafka topics (`event-created`, `event-updated`, `event-deleted`, `group-indexed`, `join-request-submitted`, `join-request-approved`)
+**Synchronous** calls use REST via Spring `RestClient`. Services call each other by container name (e.g. `http://user-service:8082`) when running in Docker.
+
+**Asynchronous** events flow through Apache Kafka. Topic names are configured in each service's `application.properties` under `kafka.topics.*`.
+
+#### Kafka Topics
+
+| Topic | Published by | Consumed by | Trigger |
+|-------|-------------|-------------|---------|
+| `event-created` | event-service | notification-service, search-service | New event created |
+| `event-updated` | event-service | notification-service, search-service | Event details changed |
+| `event-deleted` | event-service | notification-service, search-service | Event removed |
+| `rsvp-created` | event-service | notification-service | User RSVPs to an event |
+| `rsvp-cancelled` | event-service | notification-service | User cancels their RSVP |
+| `group-indexed` | user-service | search-service | New group created or updated |
+| `group-deleted` | user-service | search-service | Group removed |
+| `join-request-submitted` | user-service | notification-service | User requests to join a group |
+| `join-request-approved` | user-service | notification-service | Organizer approves join request |
+| `join-request-rejected` | user-service | notification-service | Organizer rejects join request |
+
+Topic names can be overridden via environment variables in `docker-compose.yml`:
+
+```yaml
+environment:
+  KAFKA_TOPICS_EVENT-CREATED: event-created
+  KAFKA_TOPICS_RSVP-CREATED: rsvp-created
+  # ... etc.
+```
 
 ---
 
@@ -280,7 +431,13 @@ CS7319-FinalProject-Group06-Natarajan-Suzuki-Belotte/
 │       └── db_dml.sql                 ← Seed data (auto-loaded on first start)
 │
 └── unselected/                        ← Microservices architecture
-    ├── docker-compose.yml             ← Kafka + Elasticsearch + Ollama + all 5 services
+    ├── docker-compose.yml             ← Kafka + Elasticsearch + Ollama + all 7 services
+    ├── eventual.database/
+    │   ├── user-service.sql           ← Schema for eventual_users
+    │   ├── event-service.sql          ← Schema for eventual_events
+    │   ├── notification-service.sql   ← Schema for eventual_notifications
+    │   ├── vendor-service.sql         ← Schema for eventual_vendors
+    │   └── support-service.sql        ← Schema for eventual_support
     └── eventual.backend/
         ├── pom.xml                    ← Parent POM (reactor build)
         ├── api-gateway/               ← Spring Cloud Gateway (port 8080)
@@ -288,13 +445,17 @@ CS7319-FinalProject-Group06-Natarajan-Suzuki-Belotte/
         │   └── src/main/resources/
         │       ├── application.yml        ← local dev config
         │       └── application-docker.yml ← Docker route overrides
-        ├── user-service/              ← Users + Groups (port 8082)
+        ├── user-service/              ← Users, Groups, Join Requests (port 8082)
         │   └── Dockerfile
-        ├── event-service/             ← Events + RSVP (port 8081)
+        ├── event-service/             ← Events, RSVPs (port 8081)
         │   └── Dockerfile
-        ├── search-service/            ← Elasticsearch + Recommendations (port 8084)
+        ├── search-service/            ← Elasticsearch, Hybrid Search, Recommendations (port 8084)
         │   └── Dockerfile
-        └── notification-service/      ← Notifications via Kafka (port 8083)
+        ├── notification-service/      ← In-app Notifications via Kafka (port 8083)
+        │   └── Dockerfile
+        ├── vendor-service/            ← Vendors, Reviews, Event–Vendor links (port 8085)
+        │   └── Dockerfile
+        └── support-service/           ← Support Tickets (port 8086)
             └── Dockerfile
 ```
 
