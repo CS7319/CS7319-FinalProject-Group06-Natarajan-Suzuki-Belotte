@@ -5,8 +5,6 @@ import com.CS7319.Group06.eventual.model.search.GroupDocument;
 
 /**
  * Data access for Elasticsearch ingestion (index and delete operations).
- *
- * @author harininatarajan
  */
 public interface IngestionDao {
 

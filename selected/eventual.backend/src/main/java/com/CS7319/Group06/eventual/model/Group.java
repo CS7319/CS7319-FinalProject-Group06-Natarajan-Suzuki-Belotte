@@ -9,8 +9,6 @@ import java.util.List;
 
 /**
  * Represents a community group a user can join
- *
- * @author harininatarajan
  */
 @Data
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)

@@ -13,8 +13,6 @@ import java.io.IOException;
 /**
  * Elasticsearch implementation of IngestionDao.
  * Handles indexing and deletion of event and group documents.
- *
- * @author harininatarajan
  */
 @Repository
 public class ElasticsearchIngestionDao extends AbstractSearchDao implements IngestionDao {

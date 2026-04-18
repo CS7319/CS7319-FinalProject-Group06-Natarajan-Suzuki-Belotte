@@ -7,8 +7,6 @@ import java.util.List;
 
 /**
  * Data layer for group join requests
- *
- * @author harininatarajan
  */
 public interface GroupJoinRequestDao {
 

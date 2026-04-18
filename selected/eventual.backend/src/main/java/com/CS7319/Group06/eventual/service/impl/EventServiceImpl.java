@@ -12,6 +12,7 @@ import com.CS7319.Group06.eventual.model.notification.EventUpdatedNotification;
 import com.CS7319.Group06.eventual.model.notification.NewGroupEventCreatedNotification;
 import com.CS7319.Group06.eventual.service.EventService;
 import com.CS7319.Group06.eventual.service.IngestionService;
+import com.CS7319.Group06.eventual.service.VendorService;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -28,8 +29,6 @@ import java.util.UUID;
 
 /**
  * Implementation for EventService
- *
- * @author harininatarajan
  */
 @Service
 public class EventServiceImpl implements EventService {
@@ -39,16 +38,19 @@ public class EventServiceImpl implements EventService {
     private final FileStorageConfig fileStorageConfig;
     private final ApplicationEventPublisher eventPublisher;
     private final IngestionService ingestionService;
+    private final VendorService vendorService;
 
     public EventServiceImpl(EventDao eventDao, RsvpDao rsvpDao,
                             FileStorageConfig fileStorageConfig,
                             ApplicationEventPublisher eventPublisher,
-                            IngestionService ingestionService) {
+                            IngestionService ingestionService,
+                            VendorService vendorService) {
         this.eventDao = eventDao;
         this.rsvpDao = rsvpDao;
         this.fileStorageConfig = fileStorageConfig;
         this.eventPublisher = eventPublisher;
         this.ingestionService = ingestionService;
+        this.vendorService = vendorService;
     }
 
     @Override
@@ -100,6 +102,9 @@ public class EventServiceImpl implements EventService {
         try {
             Event created = eventDao.createEvent(event);
 
+            // Link any vendors specified at creation time
+            vendorService.linkVendorsToEvent(created.getEventId(), event.getVendorIds());
+
             // Sync to Elasticsearch asynchronously
             ingestionService.indexEvent(created);
 
@@ -143,6 +148,9 @@ public class EventServiceImpl implements EventService {
             if (updated == null) {
                 throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Event not found with id: " + id);
             }
+
+            // Link any additional vendors specified in the update
+            vendorService.linkVendorsToEvent(updated.getEventId(), event.getVendorIds());
 
             // Sync to Elasticsearch asynchronously
             ingestionService.indexEvent(updated);

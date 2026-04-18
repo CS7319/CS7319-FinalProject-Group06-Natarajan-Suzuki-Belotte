@@ -9,8 +9,6 @@ import java.io.IOException;
 
 /**
  * Creates the Elasticsearch indices with their mappings on application startup if they do not already exist.
- *
- * @author harininatarajan
  */
 @Slf4j
 @Component

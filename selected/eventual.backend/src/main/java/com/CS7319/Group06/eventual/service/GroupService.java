@@ -8,8 +8,6 @@ import java.util.List;
 
 /**
  * Service to manage groups
- *
- * @author harininatarajan
  */
 public interface GroupService {
 

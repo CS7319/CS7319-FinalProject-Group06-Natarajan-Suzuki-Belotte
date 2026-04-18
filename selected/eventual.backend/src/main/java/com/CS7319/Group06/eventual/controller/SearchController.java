@@ -14,8 +14,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 /**
  * Search Controller to search for events and groups
- *
- * @author harininatarajan
  */
 @RestController
 @RequestMapping("/api/search")

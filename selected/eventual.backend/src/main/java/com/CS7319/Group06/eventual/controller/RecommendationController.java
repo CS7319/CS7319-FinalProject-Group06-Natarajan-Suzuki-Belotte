@@ -14,8 +14,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 /**
  * Recommendations based on the users profile
- *
- * @author harininatarajan
  */
 @RestController
 @RequestMapping("/api/recommendations")

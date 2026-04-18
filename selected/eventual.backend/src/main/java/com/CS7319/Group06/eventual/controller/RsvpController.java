@@ -11,8 +11,6 @@ import java.util.List;
 
 /**
  * RSVP Controller — /api/events/{eventId}/rsvp
- *
- * @author harininatarajan
  */
 @RestController
 @RequestMapping("/api/events/{eventId}/rsvp")

@@ -14,8 +14,6 @@ import java.util.List;
 
 /**
  * JDBC implementation of RsvpDao
- *
- * @author harininatarajan
  */
 @Component
 public class JdbcRsvpDao implements RsvpDao {

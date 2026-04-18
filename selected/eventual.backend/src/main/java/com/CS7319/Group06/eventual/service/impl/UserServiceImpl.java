@@ -24,8 +24,6 @@ import java.util.UUID;
 
 /**
  * Implementation for UserService
- *
- * @author harininatarajan
  */
 @Service
 public class UserServiceImpl implements UserService {

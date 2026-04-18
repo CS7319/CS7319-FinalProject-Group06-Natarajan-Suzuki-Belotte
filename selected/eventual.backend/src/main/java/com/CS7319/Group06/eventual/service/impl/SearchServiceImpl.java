@@ -14,8 +14,6 @@ import org.springframework.web.server.ResponseStatusException;
 
 /**
  * Implementation for SearchService
- *
- * @author harininatarajan
  */
 @Service
 public class SearchServiceImpl implements SearchService {

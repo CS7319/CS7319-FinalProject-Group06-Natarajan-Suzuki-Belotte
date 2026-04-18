@@ -30,8 +30,6 @@ import java.util.List;
  * 3. Build an interest text from their category types + location
  * 4. Generate a semantic embedding from that text via Ollama
  * 5. Pass everything to the RecommendationDao which runs the hybrid ES query
- *
- * @author harininatarajan
  */
 @Slf4j
 @Service

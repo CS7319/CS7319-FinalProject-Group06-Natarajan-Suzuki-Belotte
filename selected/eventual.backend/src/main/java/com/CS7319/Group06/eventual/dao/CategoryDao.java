@@ -4,8 +4,6 @@ import java.util.List;
 
 /**
  * Data layer for categories
- *
- * @author harininatarajan
  */
 public interface CategoryDao {
 

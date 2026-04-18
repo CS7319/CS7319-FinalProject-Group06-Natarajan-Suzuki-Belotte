@@ -15,8 +15,6 @@ import java.util.List;
 
 /**
  * Manages group operations — create, edit, join, and join request approvals
- *
- * @author harininatarajan
  */
 @RestController
 @RequestMapping("/api/groups")

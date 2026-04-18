@@ -11,7 +11,6 @@ import java.util.List;
  * Generic paginated search result
  *
  * @param <T> EventDocument or GroupDocument
- * @author harininatarajan
  */
 @Data
 @AllArgsConstructor

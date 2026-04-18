@@ -16,8 +16,6 @@ import java.util.Objects;
 
 /**
  * Base class for Search/Recommendation DAOs.
- *
- * @author harininatarajan
  */
 public abstract class AbstractSearchDao {
 

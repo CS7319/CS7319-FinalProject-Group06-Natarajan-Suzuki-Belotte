@@ -5,8 +5,6 @@ import lombok.Data;
 
 /**
  * Published when a group owner rejects a join request.
- *
- * @author harininatarajan
  */
 @Data
 @AllArgsConstructor

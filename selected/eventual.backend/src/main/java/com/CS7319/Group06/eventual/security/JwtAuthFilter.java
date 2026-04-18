@@ -16,6 +16,9 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 import java.util.List;
 
+/**
+ * JwtAuthFilter - filter for jwt auth processing.
+ */
 @Component
 public class JwtAuthFilter extends OncePerRequestFilter {
 

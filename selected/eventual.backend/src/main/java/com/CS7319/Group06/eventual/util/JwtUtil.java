@@ -13,8 +13,6 @@ import java.util.Date;
 
 /**
  * Util class user authentication
- *
- * @author harininatarajan
  */
 @Component
 public class JwtUtil {

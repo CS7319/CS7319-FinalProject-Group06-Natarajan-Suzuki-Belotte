@@ -9,8 +9,6 @@ import java.util.List;
 
 /**
  * Request class for group creation and update.
- *
- * @author harininatarajan
  */
 @Data
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)

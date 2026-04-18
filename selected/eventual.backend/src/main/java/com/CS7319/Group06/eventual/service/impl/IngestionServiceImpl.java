@@ -16,8 +16,6 @@ import java.util.List;
 
 /**
  * Implementation for IngestionService
- *
- * @author harininatarajan
  */
 @Slf4j
 @Service

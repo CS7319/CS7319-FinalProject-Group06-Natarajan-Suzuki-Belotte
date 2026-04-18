@@ -9,8 +9,6 @@ import java.time.LocalDateTime;
 
 /**
  * Class for join request
- *
- * @author harininatarajan
  */
 @Data
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)

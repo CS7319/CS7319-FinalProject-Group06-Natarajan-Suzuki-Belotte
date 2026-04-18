@@ -5,8 +5,6 @@ import lombok.Data;
 
 /**
  * Request class to allow user to login
- *
- * @author harininatarajan
  */
 @Data
 public class UserCredentials {

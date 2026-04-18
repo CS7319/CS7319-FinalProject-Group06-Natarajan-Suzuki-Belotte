@@ -5,8 +5,6 @@ import org.springframework.web.multipart.MultipartFile;
 
 /**
  * Service interface for event operations
- *
- * @author harininatarajan
  */
 public interface EventService {
 

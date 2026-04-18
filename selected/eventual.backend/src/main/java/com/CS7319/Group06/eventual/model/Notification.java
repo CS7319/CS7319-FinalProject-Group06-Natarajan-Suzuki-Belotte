@@ -10,8 +10,6 @@ import java.time.LocalDateTime;
 
 /**
  * Represents a notification sent to a user.
- *
- * @author harininatarajan
  */
 @Data
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)

@@ -5,8 +5,6 @@ import lombok.Data;
 
 /**
  * Published when a user RSVPs to an event.
- *
- * @author harininatarajan
  */
 @Data
 @AllArgsConstructor

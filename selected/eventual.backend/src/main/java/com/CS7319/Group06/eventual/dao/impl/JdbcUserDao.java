@@ -19,8 +19,6 @@ import java.util.List;
 
 /**
  * JDBC implementation of UserDao
- *
- * @author harininatarajan
  */
 @Component
 public class JdbcUserDao implements UserDao {

@@ -4,8 +4,6 @@ import com.CS7319.Group06.eventual.model.Group;
 
 /**
  * Data layer for groups
- *
- * @author harininatarajan
  */
 public interface GroupDao {
 

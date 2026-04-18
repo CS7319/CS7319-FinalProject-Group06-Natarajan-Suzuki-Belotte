@@ -11,8 +11,6 @@ import org.springframework.web.client.RestClient;
 
 /**
  * Ollama implementation for EmbeddingService
- *
- * @author harininatarajan
  */
 @Slf4j
 @Service

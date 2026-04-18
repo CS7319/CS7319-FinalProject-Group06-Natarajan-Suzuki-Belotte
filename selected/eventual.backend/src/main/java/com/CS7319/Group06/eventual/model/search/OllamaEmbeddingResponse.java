@@ -4,8 +4,6 @@ import lombok.Data;
 
 /**
  * Response from the Ollama /api/embeddings endpoint.
- *
- * @author harininatarajan
  */
 @Data
 public class OllamaEmbeddingResponse {

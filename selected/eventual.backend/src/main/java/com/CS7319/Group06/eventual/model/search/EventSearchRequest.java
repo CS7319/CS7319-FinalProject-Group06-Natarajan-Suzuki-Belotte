@@ -8,8 +8,6 @@ import java.util.List;
 
 /**
  * Query parameters for searching events.
- *
- * @author harininatarajan
  */
 @Data
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)

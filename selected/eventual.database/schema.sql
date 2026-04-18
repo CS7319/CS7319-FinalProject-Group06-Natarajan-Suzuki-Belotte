@@ -1,8 +1,12 @@
 BEGIN TRANSACTION;
 
+DROP TABLE IF EXISTS support_tickets;
 DROP TABLE IF EXISTS notifications;
 DROP TABLE IF EXISTS group_join_requests;
 DROP TABLE IF EXISTS rsvp;
+DROP TABLE IF EXISTS event_vendors;
+DROP TABLE IF EXISTS vendor_reviews;
+DROP TABLE IF EXISTS vendors;
 DROP TABLE IF EXISTS events;
 DROP TABLE IF EXISTS groups;
 DROP TABLE IF EXISTS categories;
@@ -62,6 +66,37 @@ CREATE TABLE events (
     updated_at      timestamp     NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE vendors (
+    id              serial        PRIMARY KEY,
+    name            varchar(256)  NOT NULL,
+    service_type    varchar(100)  NOT NULL,   -- e.g. Catering, Photography, Music, AV & Lighting
+    contact_email   varchar(256),
+    contact_phone   varchar(50),
+    description     varchar(1000),
+    website         varchar(512),
+    is_preferred    boolean       NOT NULL DEFAULT false,
+    added_by        varchar(256)  REFERENCES users(email),
+    created_at      timestamp     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at      timestamp     NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE vendor_reviews (
+    id              serial        PRIMARY KEY,
+    vendor_id       int           NOT NULL REFERENCES vendors(id) ON DELETE CASCADE,
+    reviewer_email  varchar(256)  NOT NULL REFERENCES users(email),
+    comment         varchar(2000) NOT NULL,
+    rating          int           CHECK (rating BETWEEN 1 AND 5),
+    created_at      timestamp     NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE event_vendors (
+    id          serial    PRIMARY KEY,
+    event_id    int       NOT NULL REFERENCES events(id) ON DELETE CASCADE,
+    vendor_id   int       NOT NULL REFERENCES vendors(id),
+    created_at  timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (event_id, vendor_id)
+);
+
 CREATE TABLE rsvp (
     id          serial        PRIMARY KEY,
     event_id    int           NOT NULL REFERENCES events(id) ON DELETE CASCADE,
@@ -96,6 +131,20 @@ CREATE TABLE notifications (
 
 CREATE INDEX idx_notifications_recipient ON notifications(recipient_email, created_at DESC);
 CREATE INDEX idx_notifications_unread ON notifications(recipient_email, is_read) WHERE is_read = FALSE;
+
+CREATE TABLE support_tickets (
+    id              serial        PRIMARY KEY,
+    subject         varchar(255)  NOT NULL,
+    content         text          NOT NULL,
+    submitted_by    varchar(256)  NOT NULL REFERENCES users(email),
+    status          varchar(20)   NOT NULL DEFAULT 'UNRESOLVED',  -- UNRESOLVED, RESOLVED
+    resolved_at     timestamp,
+    created_at      timestamp     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at      timestamp     NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_support_tickets_user ON support_tickets(submitted_by, created_at DESC);
+CREATE INDEX idx_support_tickets_status ON support_tickets(status);
 
 INSERT INTO categories (name, type) VALUES
     ('Music',                  'Entertainment'),

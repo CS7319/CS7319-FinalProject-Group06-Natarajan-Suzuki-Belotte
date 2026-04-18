@@ -10,8 +10,6 @@ import java.time.LocalDateTime;
 
 /**
  * Represents a users RSVP to an event.
- *
- * @author harininatarajan
  */
 @Data
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)

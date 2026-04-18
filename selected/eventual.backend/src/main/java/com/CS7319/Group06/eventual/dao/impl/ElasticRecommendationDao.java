@@ -23,8 +23,6 @@ import java.util.List;
 
 /**
  * Elasticsearch implementation of RecommendationDao.
- *
- * @author harininatarajan
  */
 @Slf4j
 @Repository

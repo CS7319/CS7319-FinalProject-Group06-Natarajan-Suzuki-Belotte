@@ -26,8 +26,6 @@ import java.util.List;
 
 /**
  * Listens for domain events published via ApplicationEventPublisher and persists the corresponding notifications asynchronously.
- *
- * @author harininatarajan
  */
 @Slf4j
 @Component

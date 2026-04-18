@@ -7,8 +7,6 @@ import org.springframework.context.annotation.Configuration;
 /**
  * Configuration for the Ollama embedding model server.
  * Ollama runs as a Docker container defined in /elasticsearch/docker-compose.yml.
- *
- * @author harininatarajan
  */
 @Data
 @Configuration

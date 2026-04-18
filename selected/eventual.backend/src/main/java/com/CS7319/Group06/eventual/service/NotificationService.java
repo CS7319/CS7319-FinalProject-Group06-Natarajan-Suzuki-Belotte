@@ -6,8 +6,6 @@ import java.util.List;
 
 /**
  * Service for managing user notifications.
- *
- * @author harininatarajan
  */
 public interface NotificationService {
 
