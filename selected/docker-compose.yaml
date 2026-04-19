@@ -38,7 +38,7 @@ services:
     restart: "always"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./eventual.database/schema.sql:/docker-entrypoint-initdb.d/schema.sql
+      - ./eventual.database:/docker-entrypoint-initdb.d
 
   frontend:
     build:
@@ -51,12 +51,12 @@ services:
     ports:
       - "4200:80"
 
-  # section: ELASTIC SEARCH SERVICES
+  #   # section: ELASTIC SEARCH SERVICES
 
-  # Elasticsearch node 1 (primary)
-  # Port is intentionally not published to the host — the app reaches es01
-  # over the internal Docker network. This avoids conflicts if Elasticsearch
-  # is already running locally on port 9200.
+  #   # Elasticsearch node 1 (primary)
+  #   # Port is intentionally not published to the host — the app reaches es01
+  #   # over the internal Docker network. This avoids conflicts if Elasticsearch
+  #   # is already running locally on port 9200.
   es01:
     image: docker.elastic.co/elasticsearch/elasticsearch:8.13.4
     container_name: eventual-es01
@@ -88,7 +88,7 @@ services:
     networks:
       - eventual-net
 
-  # Elasticsearch node 2
+  #   # Elasticsearch node 2
   es02:
     image: docker.elastic.co/elasticsearch/elasticsearch:8.13.4
     container_name: eventual-es02
@@ -110,7 +110,7 @@ services:
     networks:
       - eventual-net
 
-  # Elasticsearch node 3
+  #   # Elasticsearch node 3
   es03:
     image: docker.elastic.co/elasticsearch/elasticsearch:8.13.4
     container_name: eventual-es03
@@ -132,12 +132,12 @@ services:
     networks:
       - eventual-net
 
-  # Ollama (local embedding model server)
-  # Port is intentionally not published to the host — the app reaches Ollama
-  # over the internal Docker network. This avoids conflicts if Ollama is
-  # already running locally on port 11434.
-  # After first startup pull the model once:
-  #   docker exec eventual-ollama ollama pull nomic-embed-text
+  #   # Ollama (local embedding model server)
+  #   # Port is intentionally not published to the host — the app reaches Ollama
+  #   # over the internal Docker network. This avoids conflicts if Ollama is
+  #   # already running locally on port 11434.
+  #   # After first startup pull the model once:
+  #   #   docker exec eventual-ollama ollama pull nomic-embed-text
   ollama:
     image: ollama/ollama:latest
     container_name: eventual-ollama
@@ -146,8 +146,8 @@ services:
     networks:
       - eventual-net
 
-  # Kibana (optional — inspect Elasticsearch indices)
-  # only starts when: docker compose --profile kibana up
+  #   # Kibana (optional — inspect Elasticsearch indices)
+  #   # only starts when: docker compose --profile kibana up
   kibana:
     image: docker.elastic.co/kibana/kibana:8.13.4
     container_name: eventual-kibana

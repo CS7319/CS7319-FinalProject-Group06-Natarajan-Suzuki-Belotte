@@ -60,7 +60,7 @@ generated_groups AS (
         ARRAY[u.email]
     FROM generate_series(1,10) i
     JOIN LATERAL (
-        SELECT email FROM users ORDER BY random() LIMIT 1
+        SELECT email FROM generated_users ORDER BY random() LIMIT 1
     ) u ON true
     RETURNING id, creator_email
 ),
@@ -86,13 +86,14 @@ generated_events AS (
         g.id
     FROM generate_series(1,30) i
     JOIN LATERAL (
-        SELECT email FROM users ORDER BY random() LIMIT 1
+        SELECT email FROM generated_users ORDER BY random() LIMIT 1
     ) u ON true
     LEFT JOIN LATERAL (
-        SELECT id FROM groups ORDER BY random() LIMIT 1
+        SELECT id FROM generated_groups ORDER BY random() LIMIT 1
     ) g ON true
     RETURNING id
 )
+select 1;
 
 -- =========================================================
 -- RSVP (random participation)
@@ -240,7 +241,7 @@ JOIN LATERAL (
     SELECT id
     FROM vendors
     ORDER BY random()
-    LIMIT floor(random() * 4)::int   -- 0,1,2,3 vendors per event
+    LIMIT floor((random() + 1) * 4)::int   -- 0,1,2,3 vendors per event
 ) v ON true
 ON CONFLICT (event_id, vendor_id) DO NOTHING;
 
