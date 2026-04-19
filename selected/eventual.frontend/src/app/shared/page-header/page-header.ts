@@ -1,7 +1,7 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { Router, RouterModule } from '@angular/router';
 import { ProfileService } from '../../features/profile/profile.service';
-import { UserAccount, UserInfo } from '../../features/profile/profile.data';
+import { UserAccount, UserProfile } from '../../features/profile/profile.data';
 import { FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 
@@ -15,25 +15,27 @@ export class PageHeader implements OnInit {
   private readonly profileService = inject(ProfileService);
   private readonly router = inject(Router);
 
-  userAccount: UserAccount = {} as UserAccount;
-  userInfo = signal<UserInfo>({ avatar: '', email: '', location: '', name: '' });
+  userAccount = signal<UserAccount>({} as UserAccount);
+  userInfo = signal<UserProfile>({} as UserProfile);
 
   ngOnInit(): void {
     this.userInfo.set(JSON.parse(localStorage.getItem('user') || '{}'));
-    this.userAccount.email = new FormControl('', [Validators.email, Validators.required]);
-    this.userAccount.password = new FormControl('', [Validators.required]);
+    this.userAccount.set({
+      email: new FormControl('', [Validators.email, Validators.required]),
+      password: new FormControl('', [Validators.required]),
+    });
   }
 
   OnLogOutClicked() {
     localStorage.removeItem('user');
 
-    this.userInfo.set({ avatar: '', email: '', location: '', name: '' });
+    this.userInfo.set({} as UserProfile);
     this.router.navigate(['/']);
   }
 
   onCloseClicked() {
-    this.userAccount.email.reset();
-    this.userAccount.password.reset();
+    this.userAccount().email.reset();
+    this.userAccount().password.reset();
 
     document.querySelector('#loginModal')?.classList.remove('is-active');
     document.querySelector('#signupModal')?.classList.remove('is-active');
@@ -44,15 +46,13 @@ export class PageHeader implements OnInit {
   }
 
   onLogInFormSubmitted() {
-    if (!this.userAccount.email.valid || !this.userAccount.password.valid) return;
+    if (!this.userAccount().email.valid || !this.userAccount().password.valid) return;
 
-    this.onCloseClicked();
-    this.profileService.login(this.userAccount).subscribe({
-      error: () => {
-        this.handleUserInfo({ avatar: '', email: 'hello@smu.edu', location: '', name: '' });
-      },
+    this.profileService.login(this.userAccount()).subscribe({
+      error: (error) => console.error('Log In failed', error),
       next: this.handleUserInfo,
     });
+    this.onCloseClicked();
   }
 
   onSignUpClicked() {
@@ -60,18 +60,16 @@ export class PageHeader implements OnInit {
   }
 
   onSignUpFormSubmitted() {
-    if (!this.userAccount.email.valid || !this.userAccount.password.valid) return;
+    if (!this.userAccount().email.valid || !this.userAccount().password.valid) return;
 
-    this.onCloseClicked();
-    this.profileService.signUp(this.userAccount).subscribe({
-      error: () => {
-        this.handleUserInfo({ avatar: '', email: 'hello@smu.edu', location: '', name: '' });
-      },
+    this.profileService.signUp(this.userAccount()).subscribe({
+      error: (err) => console.error('Sign Up failed', err),
       next: this.handleUserInfo,
     });
+    this.onCloseClicked();
   }
 
-  private handleUserInfo(user: UserInfo) {
+  private handleUserInfo(user: UserProfile) {
     if (!user.email) return;
 
     localStorage.setItem('user', JSON.stringify(user));
