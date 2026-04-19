@@ -16,20 +16,22 @@ export class PageHeader implements OnInit {
   private readonly router = inject(Router);
 
   userAccount = signal<UserAccount>({} as UserAccount);
-  userInfo = signal<UserProfile>({} as UserProfile);
+  userProfile = signal<UserProfile>({} as UserProfile);
 
   ngOnInit(): void {
-    this.userInfo.set(JSON.parse(localStorage.getItem('user') || '{}'));
+    this.userProfile.set(JSON.parse(localStorage.getItem('user') || '{}'));
     this.userAccount.set({
       email: new FormControl('', [Validators.email, Validators.required]),
+      name: new FormControl('', [Validators.required]),
       password: new FormControl('', [Validators.required]),
+      role: 'ORGANIZER',
     });
   }
 
   OnLogOutClicked() {
     localStorage.removeItem('user');
 
-    this.userInfo.set({} as UserProfile);
+    this.userProfile.set({} as UserProfile);
     this.router.navigate(['/']);
   }
 
@@ -48,9 +50,9 @@ export class PageHeader implements OnInit {
   onLogInFormSubmitted() {
     if (!this.userAccount().email.valid || !this.userAccount().password.valid) return;
 
-    this.profileService.login(this.userAccount()).subscribe({
+    this.profileService.logIn(this.userAccount()).subscribe({
       error: (error) => console.error('Log In failed', error),
-      next: this.handleUserInfo,
+      next: this.handleUserInfo.bind(this),
     });
     this.onCloseClicked();
   }
@@ -62,9 +64,10 @@ export class PageHeader implements OnInit {
   onSignUpFormSubmitted() {
     if (!this.userAccount().email.valid || !this.userAccount().password.valid) return;
 
+    this.userAccount().role = 'ORGANIZER';
     this.profileService.signUp(this.userAccount()).subscribe({
       error: (err) => console.error('Sign Up failed', err),
-      next: this.handleUserInfo,
+      next: this.handleUserInfo.bind(this),
     });
     this.onCloseClicked();
   }
@@ -73,6 +76,6 @@ export class PageHeader implements OnInit {
     if (!user.email) return;
 
     localStorage.setItem('user', JSON.stringify(user));
-    this.userInfo.set(user);
+    this.userProfile.set(user);
   }
 }

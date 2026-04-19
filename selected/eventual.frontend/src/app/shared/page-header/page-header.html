@@ -17,7 +17,7 @@
       <div class="navbar-end">
         <div class="navbar-item">
           <div class="buttons">
-            @if (userInfo().email) {
+            @if (userProfile().token) {
               <a class="navbar-item" routerLink="/profile">Profile</a>
               <a class="button is-primary" (click)="OnLogOutClicked()">Log Out</a>
             } @else {
@@ -45,7 +45,7 @@
           <input
             class="input"
             id="login-email"
-            type="text"
+            type="email"
             placeholder="student@smu.edu"
             [formControl]="userAccount().email"
           />
@@ -79,12 +79,25 @@
     </header>
     <section class="modal-card-body">
       <div class="field">
+        <label class="label" for="signup-name">Name</label>
+        <div class="control">
+          <input
+            class="input"
+            id="signup-name"
+            type="text"
+            placeholder="peruna"
+            [formControl]="userAccount().name"
+          />
+        </div>
+      </div>
+
+      <div class="field">
         <label class="label" for="signup-email">Email</label>
         <div class="control">
           <input
             class="input"
             id="signup-email"
-            type="text"
+            type="email"
             placeholder="student@smu.edu"
             [formControl]="userAccount().email"
           />

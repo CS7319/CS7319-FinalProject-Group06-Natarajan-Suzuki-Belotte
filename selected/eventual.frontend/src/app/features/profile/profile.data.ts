@@ -2,7 +2,9 @@ import { FormControl } from '@angular/forms';
 
 export interface UserAccount {
   email: FormControl;
+  name: FormControl;
   password: FormControl;
+  role: string;
 }
 
 export interface UserProfile {

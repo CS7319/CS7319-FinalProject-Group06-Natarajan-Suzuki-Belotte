@@ -11,14 +11,11 @@ export class ProfileService {
   private readonly apiUrl = environment.apiUrl;
   private readonly httpClient = inject(HttpClient);
 
-  getUserInfo(user: UserAccount): Observable<UserProfile> {
-    return this.httpClient.get<UserProfile>(`${this.apiUrl}/users/me`, {
-      params: { email: user.email.value },
-    });
+  getUserInfo(): UserProfile {
+    return JSON.parse(localStorage.getItem('user') || '{}');
   }
 
-  login(user: UserAccount): Observable<UserProfile> {
-    console.log('login', user.email.value, user.password.value);
+  logIn(user: UserAccount): Observable<UserProfile> {
     return this.httpClient.post<UserProfile>(`${this.apiUrl}/users/login`, {
       email: user.email.value,
       password: user.password.value,
@@ -26,9 +23,13 @@ export class ProfileService {
   }
 
   signUp(user: UserAccount): Observable<UserProfile> {
-    return this.httpClient.post<UserProfile>(`${this.apiUrl}/users/register`, {
-      email: user.email.value,
-      password: user.password.value,
-    });
+    const formData = new FormData();
+
+    formData.append('email', user.email.value);
+    formData.append('name', user.name.value);
+    formData.append('password', user.password.value);
+    formData.append('role', user.role);
+
+    return this.httpClient.post<UserProfile>(`${this.apiUrl}/users/register`, formData);
   }
 }

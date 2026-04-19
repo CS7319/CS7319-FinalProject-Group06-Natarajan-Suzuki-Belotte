@@ -1,4 +1,4 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject, OnInit, signal } from '@angular/core';
 import { ProfileService } from './profile.service';
 import { UserProfile } from './profile.data';
 
@@ -11,13 +11,9 @@ import { UserProfile } from './profile.data';
 export class Profile implements OnInit {
   private readonly profileService = inject(ProfileService);
 
-  userProfile: UserProfile = {} as UserProfile;
+  userProfile = signal<UserProfile>({} as UserProfile);
 
   ngOnInit() {
-    const user = JSON.parse(localStorage.getItem('user') || '{}');
-
-    if (user.email) {
-      this.profileService.getUserInfo(user).subscribe((profile) => (this.userProfile = profile));
-    }
+    this.userProfile.set(this.profileService.getUserInfo());
   }
 }
