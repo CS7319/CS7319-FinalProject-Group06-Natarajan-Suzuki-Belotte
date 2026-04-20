@@ -1,20 +1,21 @@
+export interface EventGroup {
+  id: number;
+  name: string;
+}
+
 export interface EventInfo {
   id: number;
-  host: EventHost;
-  name: string;
-  date: string;
+  organizerEmail: string;
+  organizerName: string;
+  title: string;
+  startDatetime: Date;
   location: string;
   description: string;
 }
 
-export interface EventGroup {
-  id: number;
-  host: EventHost;
-  name: string;
-  description: string;
-}
-
-export interface EventHost {
-  handle: string;
-  name: string;
+export interface EventResult {
+  hits: EventInfo[];
+  total_hits: 0;
+  page: 0;
+  size: 10;
 }

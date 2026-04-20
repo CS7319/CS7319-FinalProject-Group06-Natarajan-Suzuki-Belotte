@@ -1,0 +1,176 @@
+services:
+  backend:
+    build:
+      dockerfile: backend.dockerfile
+    container_name: eventual-backend
+    depends_on:
+      - database
+      - es01
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://database:5432/eventualdb
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: postgres1
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_PROFILES_ACTIVE: docker
+      ELASTICSEARCH_HOST: es01
+      ELASTICSEARCH_PORT: 9200
+      OLLAMA_HOST: ollama
+      OLLAMA_PORT: 11434
+      FILE_UPLOAD-DIR: /app/uploads
+    networks:
+      - eventual-net
+    ports:
+      - "4201:8080"
+    volumes:
+      - uploads-data:/app/uploads
+
+  database:
+    image: postgres:17
+    container_name: eventual-database
+    environment:
+      POSTGRES_DB: eventualdb
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres1
+    networks:
+      - eventual-net
+    ports:
+      - "5432:5432"
+    restart: "always"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./eventual.database:/docker-entrypoint-initdb.d
+
+  frontend:
+    build:
+      dockerfile: frontend.dockerfile
+    container_name: eventual-frontend
+    depends_on:
+      - backend
+    networks:
+      - eventual-net
+    ports:
+      - "4200:80"
+
+  #   # section: ELASTIC SEARCH SERVICES
+
+  #   # Elasticsearch node 1 (primary)
+  #   # Port is intentionally not published to the host — the app reaches es01
+  #   # over the internal Docker network. This avoids conflicts if Elasticsearch
+  #   # is already running locally on port 9200.
+  es01:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.13.4
+    container_name: eventual-es01
+    environment:
+      - node.name=es01
+      - cluster.name=eventual-cluster
+      - discovery.seed_hosts=es02,es03
+      - cluster.initial_master_nodes=es01,es02,es03
+      - bootstrap.memory_lock=true
+      - xpack.security.enabled=false
+      - xpack.ml.enabled=false
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - es-data01:/usr/share/elasticsearch/data
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "curl -s http://localhost:9200/_cluster/health | grep -qE
+            '\"status\":\"(green|yellow)\"'",
+        ]
+      interval: 15s
+      timeout: 10s
+      retries: 12
+    networks:
+      - eventual-net
+
+  #   # Elasticsearch node 2
+  es02:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.13.4
+    container_name: eventual-es02
+    environment:
+      - node.name=es02
+      - cluster.name=eventual-cluster
+      - discovery.seed_hosts=es01,es03
+      - cluster.initial_master_nodes=es01,es02,es03
+      - bootstrap.memory_lock=true
+      - xpack.security.enabled=false
+      - xpack.ml.enabled=false
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - es-data02:/usr/share/elasticsearch/data
+    networks:
+      - eventual-net
+
+  #   # Elasticsearch node 3
+  es03:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.13.4
+    container_name: eventual-es03
+    environment:
+      - node.name=es03
+      - cluster.name=eventual-cluster
+      - discovery.seed_hosts=es01,es02
+      - cluster.initial_master_nodes=es01,es02,es03
+      - bootstrap.memory_lock=true
+      - xpack.security.enabled=false
+      - xpack.ml.enabled=false
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - es-data03:/usr/share/elasticsearch/data
+    networks:
+      - eventual-net
+
+  #   # Ollama (local embedding model server)
+  #   # Port is intentionally not published to the host — the app reaches Ollama
+  #   # over the internal Docker network. This avoids conflicts if Ollama is
+  #   # already running locally on port 11434.
+  #   # After first startup pull the model once:
+  #   #   docker exec eventual-ollama ollama pull nomic-embed-text
+  ollama:
+    image: ollama/ollama:latest
+    container_name: eventual-ollama
+    volumes:
+      - ollama-data:/root/.ollama
+    networks:
+      - eventual-net
+
+  #   # Kibana (optional — inspect Elasticsearch indices)
+  #   # only starts when: docker compose --profile kibana up
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.13.4
+    container_name: eventual-kibana
+    environment:
+      - ELASTICSEARCH_HOSTS=["http://es01:9200","http://es02:9200","http://es03:9200"]
+    ports:
+      - "5601:5601"
+    depends_on:
+      es01:
+        condition: service_healthy
+    networks:
+      - eventual-net
+    profiles:
+      - kibana
+
+networks:
+  eventual-net:
+    driver: bridge
+
+volumes:
+  es-data01:
+  es-data02:
+  es-data03:
+  ollama-data:
+  postgres_data:
+  uploads-data:
