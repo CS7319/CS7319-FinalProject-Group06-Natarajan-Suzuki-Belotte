@@ -9,7 +9,10 @@
           </div>
 
           <figure class="image">
-            <img class="is-squared" src="https://bulma.io/assets/images/placeholders/256x256.png" />
+            <img
+              class="is-squared"
+              src="https://avatars.githubusercontent.com/u/273859013?s=200&v=4"
+            />
           </figure>
 
           <div class="section box">
@@ -26,13 +29,13 @@
               </div>
 
               <div class="section box">
-                <header class="title">Hosts</header>
+                <header class="title">Organizers</header>
 
                 <nav class="level my-5">
                   <div class="level-item has-text-centered">
                     <div>
-                      <p class="heading">{{ socialEvent().organizerName }}</p>
-                      <p class="subttitle">{{ socialEvent().organizerEmail }}</p>
+                      <p class="heading">{{ socialEvent().organizer_name }}</p>
+                      <p class="subttitle">{{ socialEvent().organizer_email }}</p>
                     </div>
                   </div>
                   <div class="level-item has-text-centered">
@@ -48,8 +51,8 @@
             <div class="column">
               <div class="section box">
                 <header class="title">When</header>
-                <time dateTime="{{ socialEvent().startDatetime }}">{{
-                  socialEvent().startDatetime
+                <time dateTime="{{ socialEvent().start_date_time }}">{{
+                  socialEvent().start_date_time
                 }}</time>
               </div>
 
@@ -63,18 +66,14 @@
             <header class="title">RSVPs</header>
 
             <nav class="level my-5">
-              <div class="level-item has-text-centered">
-                <div>
-                  <p class="heading">RSVP 1</p>
-                  <p class="subttitle">title</p>
+              @for (rsvp of socialEvent().rsvps; track rsvp.id) {
+                <div class="level-item has-text-centered">
+                  <div>
+                    <p class="heading">{{ rsvp.user_email }}</p>
+                    <p class="subttitle">{{ rsvp.status }}</p>
+                  </div>
                 </div>
-              </div>
-              <div class="level-item has-text-centered">
-                <div>
-                  <p class="heading">RSVP 2</p>
-                  <p class="subttitle">title</p>
-                </div>
-              </div>
+              }
               <div class="level-item has-text-centered">
                 <div>
                   <p class="heading">New RSVP</p>
