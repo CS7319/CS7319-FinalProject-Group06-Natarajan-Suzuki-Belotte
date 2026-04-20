@@ -26,7 +26,7 @@ services:
         soft: -1
         hard: -1
     volumes:
-      - es-data01:/usr/share/elasticsearch/data
+      - ./docker/esdata01:/usr/share/elasticsearch/data
     healthcheck:
       test: ["CMD-SHELL", "curl -s http://localhost:9200/_cluster/health | grep -qE '\"status\":\"(green|yellow)\"'"]
       interval: 15s
@@ -53,7 +53,7 @@ services:
         soft: -1
         hard: -1
     volumes:
-      - es-data02:/usr/share/elasticsearch/data
+      - ./docker/esdata02:/usr/share/elasticsearch/data
     networks:
       - eventual-net
 
@@ -75,7 +75,7 @@ services:
         soft: -1
         hard: -1
     volumes:
-      - es-data03:/usr/share/elasticsearch/data
+      - ./docker/esdata03:/usr/share/elasticsearch/data
     networks:
       - eventual-net
 
@@ -137,9 +137,6 @@ services:
       - kibana
 
 volumes:
-  es-data01:
-  es-data02:
-  es-data03:
   ollama-data:
   uploads-data:
 
