@@ -19,45 +19,53 @@ export class Search implements OnInit {
   ngOnInit(): void {
     this.getSocialGroups();
 
-    this.route.queryParams.subscribe((params) => {
-      this.getSocialEvents(params['group']);
-    });
+    // this.route.queryParams.subscribe((params) => {
+    //   this.getSocialEvents(params['group']);
+    // });
+
+    this.getSocialEvents('');
   }
 
   getSocialEvents(query: string): void {
     this.searchService.getEvents(query).subscribe({
-      error: () => {
+      error: (error) => {
+        console.error('Error fetching events', error);
         this.socialEvents.set([
           {
             id: 1,
-            hosts: [{ email: 'hello@smu.edu', name: 'Peruna' }],
-            name: 'Event 1',
-            date: new Date(),
+            organizerEmail: 'Peruna',
+            organizerName: 'hello@smu.edu',
+            title: 'Event 1',
+            startDatetime: new Date(),
             location: 'Dallas, TX',
             description:
               'Lorem ipsum dolor sit amet consectetur adipisicing elit. Magni ratione recusandae voluptas totam aut dicta, aspernatur velit molestiae obcaecati pariatur quas accusamus dolorum iusto blanditiis nihil, saepe a at. Nihil!',
           },
           {
             id: 2,
-            hosts: [{ email: 'hello@smu.edu', name: 'Peruna' }],
-            name: 'Event 2',
-            date: new Date(),
+            organizerEmail: 'Peruna',
+            organizerName: 'hello@smu.edu',
+            title: 'Event 2',
+            startDatetime: new Date(),
             location: 'Fort Worth, TX',
             description:
               'Lorem ipsum dolor sit amet consectetur adipisicing elit. Magni ratione recusandae voluptas totam aut dicta, aspernatur velit molestiae obcaecati pariatur quas accusamus dolorum iusto blanditiis nihil, saepe a at. Nihil!',
           },
           {
             id: 3,
-            hosts: [{ email: 'hello@smu.edu', name: 'Peruna' }],
-            name: 'Event 3',
-            date: new Date(),
+            organizerEmail: 'Peruna',
+            organizerName: 'hello@smu.edu',
+            title: 'Event 3',
+            startDatetime: new Date(),
             location: 'Austin, TX',
             description:
               'Lorem ipsum dolor sit amet consectetur adipisicing elit. Magni ratione recusandae voluptas totam aut dicta, aspernatur velit molestiae obcaecati pariatur quas accusamus dolorum iusto blanditiis nihil, saepe a at. Nihil!',
           },
         ]);
       },
-      next: (events) => this.socialEvents.set(events || []),
+      next: (events) => {
+        this.socialEvents.set(events?.hits || []);
+      },
     });
   }
 

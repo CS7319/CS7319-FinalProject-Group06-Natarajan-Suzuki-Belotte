@@ -26,9 +26,10 @@ export class SocialEvent implements OnInit {
       error: () => {
         this.socialEvent.set({
           id: 2026,
-          hosts: [{ email: 'hello@smu.edu', name: 'Peruna' }],
-          name: 'Event 2026',
-          date: new Date(),
+          organizerEmail: 'Peruna',
+          organizerName: 'hello@smu.edu',
+          title: 'Event 2026',
+          startDatetime: new Date(),
           location: 'Dallas, TX',
           description:
             'Lorem ipsum dolor sit amet consectetur adipisicing elit. Magni ratione recusandae voluptas totam aut dicta, aspernatur velit molestiae obcaecati pariatur quas accusamus dolorum iusto blanditiis nihil, saepe a at. Nihil!',

@@ -4,7 +4,7 @@
       <div class="columns">
         <aside class="column is-one-quarter">
           <div class="has-text-centered my-5">
-            <p class="title is-3">{{ socialEvent().name }}</p>
+            <p class="title is-3">{{ socialEvent().title }}</p>
             <p class="subtitle is-5">{{ socialEvent().location }}</p>
           </div>
 
@@ -29,14 +29,12 @@
                 <header class="title">Hosts</header>
 
                 <nav class="level my-5">
-                  @for (host of socialEvent().hosts; track host.email) {
-                    <div class="level-item has-text-centered">
-                      <div>
-                        <p class="heading">{{ host.name }}</p>
-                        <p class="subttitle">{{ host.email }}</p>
-                      </div>
+                  <div class="level-item has-text-centered">
+                    <div>
+                      <p class="heading">{{ socialEvent().organizerName }}</p>
+                      <p class="subttitle">{{ socialEvent().organizerEmail }}</p>
                     </div>
-                  }
+                  </div>
                   <div class="level-item has-text-centered">
                     <div>
                       <p class="heading">New Host</p>
@@ -50,7 +48,9 @@
             <div class="column">
               <div class="section box">
                 <header class="title">When</header>
-                <time dateTime="{{ socialEvent().date }}">{{ socialEvent().date }}</time>
+                <time dateTime="{{ socialEvent().startDatetime }}">{{
+                  socialEvent().startDatetime
+                }}</time>
               </div>
 
               <div class="section box">

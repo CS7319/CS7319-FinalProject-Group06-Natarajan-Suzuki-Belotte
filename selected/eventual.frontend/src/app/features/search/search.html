@@ -30,7 +30,7 @@
                   </div>
 
                   <header class="card-header">
-                    <p class="card-header-title">{{ socialEvent.name }}</p>
+                    <p class="card-header-title">{{ socialEvent.title }}</p>
                     <button class="card-header-icon" aria-label="more options">
                       <span class="icon">
                         <i class="fas fa-angle-down" aria-hidden="true"></i>
@@ -50,8 +50,8 @@
                       </div>
 
                       <div class="media-content">
-                        <p class="title is-4">{{ socialEvent.hosts[0].name }}</p>
-                        <p class="subtitle is-6">@{{ socialEvent.hosts[0].email }}</p>
+                        <p class="title is-4">{{ socialEvent.organizerName }}</p>
+                        <p class="subtitle is-6">@{{ socialEvent.organizerEmail }}</p>
                       </div>
                     </div>
 

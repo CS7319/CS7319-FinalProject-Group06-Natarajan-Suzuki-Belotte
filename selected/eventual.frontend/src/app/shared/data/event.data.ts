@@ -5,14 +5,17 @@ export interface EventGroup {
 
 export interface EventInfo {
   id: number;
-  hosts: EventHost[];
-  name: string;
-  date: Date;
+  organizerEmail: string;
+  organizerName: string;
+  title: string;
+  startDatetime: Date;
   location: string;
   description: string;
 }
 
-export interface EventHost {
-  email: string;
-  name: string;
+export interface EventResult {
+  hits: EventInfo[];
+  total_hits: 0;
+  page: 0;
+  size: 10;
 }
