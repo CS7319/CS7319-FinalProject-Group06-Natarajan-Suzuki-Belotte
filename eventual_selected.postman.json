@@ -1,0 +1,1016 @@
+{
+  "info": {
+    "name": "Eventual — Layered Architecture",
+    "description": "REST API collection for the Eventual monolith (N-Tier / Layered architecture) running on port 8080.\n\nGETTING STARTED\n1. Run the app: cd selected && docker compose up --build\n2. Create DB: psql -U postgres -c 'CREATE DATABASE eventual;'\n3. Run schema: psql -U postgres -d eventual -f selected/eventual.database/schema.sql\n4. Register via POST /api/users/register\n5. Login via POST /api/users/login — the token is saved automatically to the collection variable\n\nROLES\n- ORGANIZER   — can create/update events, groups, vendors\n- PARTICIPANT  — can RSVP, join groups, post reviews\n- ADMIN        — cannot register via API; promote in DB:\n    UPDATE users SET role = 'ADMIN' WHERE email = 'admin@example.com';\n\nAUTH\nCollection-level Bearer auth reads {{token}}. The Login request auto-saves the token on success.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      { "key": "token", "value": "{{token}}", "type": "string" }
+    ]
+  },
+  "variable": [
+    { "key": "base_url",           "value": "http://localhost:8080", "type": "string" },
+    { "key": "token",              "value": "",                      "type": "string" },
+    { "key": "organizer_email",    "value": "alice@example.com",     "type": "string" },
+    { "key": "participant_email",  "value": "bob@example.com",       "type": "string" },
+    { "key": "event_id",           "value": "1",                     "type": "string" },
+    { "key": "group_id",           "value": "1",                     "type": "string" },
+    { "key": "vendor_id",          "value": "1",                     "type": "string" },
+    { "key": "ticket_id",          "value": "1",                     "type": "string" },
+    { "key": "notification_id",    "value": "1",                     "type": "string" },
+    { "key": "join_request_id",    "value": "1",                     "type": "string" }
+  ],
+  "item": [
+
+    {
+      "name": "🔐 Auth & Users",
+      "description": "Registration, login, and profile management.\n/register and /login are public — all other endpoints require Bearer token.",
+      "item": [
+        {
+          "name": "Register Organizer",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/users/register",
+              "host": ["{{base_url}}"],
+              "path": ["api", "users", "register"]
+            },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "email",        "value": "alice@example.com",                   "type": "text" },
+                { "key": "name",         "value": "Alice Johnson",                       "type": "text" },
+                { "key": "password",     "value": "Password123!",                        "type": "text" },
+                { "key": "role",         "value": "ORGANIZER",                           "type": "text" },
+                { "key": "pronoun",      "value": "she/her",                             "type": "text" },
+                { "key": "location",     "value": "Dallas, TX",                          "type": "text" },
+                { "key": "aboutMe",      "value": "Event organizer and tech enthusiast", "type": "text" },
+                { "key": "categoryTypes","value": "Technology",                          "type": "text" },
+                { "key": "categoryTypes","value": "Music",                               "type": "text" },
+                { "key": "profilePicture","value": "",                                   "type": "file", "disabled": true }
+              ]
+            },
+            "description": "Register as ORGANIZER. Valid roles: ORGANIZER, PARTICIPANT"
+          }
+        },
+        {
+          "name": "Register Participant",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/users/register",
+              "host": ["{{base_url}}"],
+              "path": ["api", "users", "register"]
+            },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "email",        "value": "bob@example.com", "type": "text" },
+                { "key": "name",         "value": "Bob Smith",        "type": "text" },
+                { "key": "password",     "value": "Password123!",     "type": "text" },
+                { "key": "role",         "value": "PARTICIPANT",      "type": "text" },
+                { "key": "location",     "value": "Dallas, TX",       "type": "text" },
+                { "key": "categoryTypes","value": "Sports",           "type": "text" },
+                { "key": "categoryTypes","value": "Gaming",           "type": "text" }
+              ]
+            },
+            "description": "Register as PARTICIPANT — can RSVP, join groups, post vendor reviews."
+          }
+        },
+        {
+          "name": "Register Admin (then promote in DB)",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/users/register",
+              "host": ["{{base_url}}"],
+              "path": ["api", "users", "register"]
+            },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "email",    "value": "admin@example.com", "type": "text" },
+                { "key": "name",     "value": "Super Admin",        "type": "text" },
+                { "key": "password", "value": "Admin123!",          "type": "text" },
+                { "key": "role",     "value": "ORGANIZER",          "type": "text" }
+              ]
+            },
+            "description": "ADMIN is not a registerable role. Register as ORGANIZER first, then promote in PostgreSQL:\n  UPDATE users SET role = 'ADMIN' WHERE email = 'admin@example.com';\nThen login again to get a fresh JWT with ADMIN role."
+          }
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var json = pm.response.json();",
+                  "    pm.collectionVariables.set('token', json.token);",
+                  "    console.log('Token saved:', json.token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/users/login",
+              "host": ["{{base_url}}"],
+              "path": ["api", "users", "login"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"alice@example.com\",\n  \"password\": \"Password123!\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "description": "Returns { token, email, role }.\nThe test script automatically saves the token to the collection variable — no manual copy-paste needed."
+          }
+        },
+        {
+          "name": "Login (Admin)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var json = pm.response.json();",
+                  "    pm.collectionVariables.set('token', json.token);",
+                  "    console.log('Admin token saved:', json.token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/users/login",
+              "host": ["{{base_url}}"],
+              "path": ["api", "users", "login"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@example.com\",\n  \"password\": \"Admin123!\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "description": "Login after promoting the user to ADMIN in the DB. Token with ADMIN role is auto-saved."
+          }
+        },
+        {
+          "name": "Update User Profile",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/users/{{organizer_email}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "users", "{{organizer_email}}"]
+            },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "name",           "value": "Alice Johnson",                              "type": "text" },
+                { "key": "pronoun",        "value": "she/her",                                    "type": "text" },
+                { "key": "location",       "value": "Dallas, TX",                                 "type": "text" },
+                { "key": "aboutMe",        "value": "Passionate event organizer and tech lover.", "type": "text" },
+                { "key": "categoryTypes",  "value": "Technology",                                 "type": "text" },
+                { "key": "categoryTypes",  "value": "Photography",                                "type": "text" },
+                { "key": "profilePicture", "value": "",                                           "type": "file", "disabled": true }
+              ]
+            },
+            "description": "Update profile. A user can only update their own profile."
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "📅 Events",
+      "description": "Create, read, update, delete events. CUD requires ORGANIZER role.",
+      "item": [
+        {
+          "name": "Create Event (PUBLIC)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/events",
+              "host": ["{{base_url}}"],
+              "path": ["api", "events"]
+            },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "title",         "value": "Summer Tech Meetup",                              "type": "text" },
+                { "key": "description",   "value": "A networking event for Dallas tech enthusiasts.", "type": "text" },
+                { "key": "location",      "value": "Dallas Convention Center, Dallas TX",             "type": "text" },
+                { "key": "startDateTime", "value": "2026-07-15T18:00:00",                             "type": "text" },
+                { "key": "endDateTime",   "value": "2026-07-15T21:00:00",                             "type": "text" },
+                { "key": "eventType",     "value": "PUBLIC",                                          "type": "text" },
+                { "key": "capacity",      "value": "80",                                              "type": "text" },
+                { "key": "categoryTypes", "value": "Technology",                                      "type": "text" },
+                { "key": "categoryTypes", "value": "Business & Networking",                           "type": "text" },
+                { "key": "eventPicture",  "value": "",                                                "type": "file", "disabled": true }
+              ]
+            },
+            "description": "Create a public event. Requires ORGANIZER role.\nFields use camelCase — @ModelAttribute binding, not JSON.\nValid eventType: PUBLIC, GROUP"
+          }
+        },
+        {
+          "name": "Create Event (GROUP)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/events",
+              "host": ["{{base_url}}"],
+              "path": ["api", "events"]
+            },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "title",         "value": "Photography Workshop for Members",                          "type": "text" },
+                { "key": "description",   "value": "Exclusive hands-on photography workshop for group members.", "type": "text" },
+                { "key": "location",      "value": "Studio 5, Deep Ellum, Dallas TX",                          "type": "text" },
+                { "key": "startDateTime", "value": "2026-08-10T10:00:00",                                       "type": "text" },
+                { "key": "endDateTime",   "value": "2026-08-10T14:00:00",                                       "type": "text" },
+                { "key": "eventType",     "value": "GROUP",                                                     "type": "text" },
+                { "key": "groupId",       "value": "{{group_id}}",                                              "type": "text" },
+                { "key": "capacity",      "value": "20",                                                        "type": "text" },
+                { "key": "categoryTypes", "value": "Photography",                                               "type": "text" }
+              ]
+            },
+            "description": "Create a group-scoped event. Requires ORGANIZER role. groupId must reference an existing group."
+          }
+        },
+        {
+          "name": "Get Event by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/events/{{event_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "events", "{{event_id}}"]
+            },
+            "description": "Fetch full event details including RSVP counts."
+          }
+        },
+        {
+          "name": "Update Event",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/events/{{event_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "events", "{{event_id}}"]
+            },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "title",         "value": "Summer Tech Meetup 2026 (Updated)",                  "type": "text" },
+                { "key": "description",   "value": "Updated: Join us for talks, demos, and networking.", "type": "text" },
+                { "key": "location",      "value": "Omni Dallas Hotel, 555 S Lamar, Dallas TX",         "type": "text" },
+                { "key": "startDateTime", "value": "2026-07-15T17:30:00",                               "type": "text" },
+                { "key": "endDateTime",   "value": "2026-07-15T22:00:00",                               "type": "text" },
+                { "key": "eventType",     "value": "PUBLIC",                                            "type": "text" },
+                { "key": "capacity",      "value": "120",                                               "type": "text" },
+                { "key": "categoryTypes", "value": "Technology",                                        "type": "text" },
+                { "key": "categoryTypes", "value": "Business & Networking",                             "type": "text" }
+              ]
+            },
+            "description": "Update an event. Requires ORGANIZER role."
+          }
+        },
+        {
+          "name": "Delete Event",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/events/{{event_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "events", "{{event_id}}"]
+            },
+            "description": "Delete an event. Requires ORGANIZER role. Returns 204 No Content."
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "👥 Groups",
+      "description": "Group management and join request workflow.",
+      "item": [
+        {
+          "name": "Create Group (Public)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/groups",
+              "host": ["{{base_url}}"],
+              "path": ["api", "groups"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Dallas Tech Enthusiasts\",\n  \"description\": \"A community for software engineers and tech professionals in Dallas.\",\n  \"is_public\": true\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "description": "Create a public group. Requires ORGANIZER role.\nis_public=true: anyone can join immediately."
+          }
+        },
+        {
+          "name": "Create Group (Private)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/groups",
+              "host": ["{{base_url}}"],
+              "path": ["api", "groups"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Photography Club\",\n  \"description\": \"Exclusive group for serious photographers in the DFW area.\",\n  \"is_public\": false\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "description": "Create a private group. Membership requires organizer approval. Requires ORGANIZER role."
+          }
+        },
+        {
+          "name": "Update Group",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/groups/{{group_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "groups", "{{group_id}}"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Dallas Tech Enthusiasts\",\n  \"description\": \"The premier community for developers, designers, and tech founders in Dallas.\",\n  \"is_public\": true\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "description": "Update group details. Requires ORGANIZER role."
+          }
+        },
+        {
+          "name": "Join Group",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/groups/{{group_id}}/join",
+              "host": ["{{base_url}}"],
+              "path": ["api", "groups", "{{group_id}}", "join"]
+            },
+            "description": "Join a group.\nPublic → 200 OK, immediately added.\nPrivate → 202 Accepted, creates a pending join request."
+          }
+        },
+        {
+          "name": "Get Pending Join Requests",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/groups/{{group_id}}/join-requests",
+              "host": ["{{base_url}}"],
+              "path": ["api", "groups", "{{group_id}}", "join-requests"]
+            },
+            "description": "List pending join requests for a group. Requires ORGANIZER role."
+          }
+        },
+        {
+          "name": "Approve Join Request",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/groups/{{group_id}}/join-requests/{{join_request_id}}/approve",
+              "host": ["{{base_url}}"],
+              "path": ["api", "groups", "{{group_id}}", "join-requests", "{{join_request_id}}", "approve"]
+            },
+            "description": "Approve a pending join request. Requires ORGANIZER role."
+          }
+        },
+        {
+          "name": "Reject Join Request",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/groups/{{group_id}}/join-requests/{{join_request_id}}/reject",
+              "host": ["{{base_url}}"],
+              "path": ["api", "groups", "{{group_id}}", "join-requests", "{{join_request_id}}", "reject"]
+            },
+            "description": "Reject a pending join request. Requires ORGANIZER role."
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "🎟️ RSVPs",
+      "description": "RSVP to events and manage attendance.",
+      "item": [
+        {
+          "name": "RSVP to Event",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/events/{{event_id}}/rsvp",
+              "host": ["{{base_url}}"],
+              "path": ["api", "events", "{{event_id}}", "rsvp"]
+            },
+            "description": "RSVP to an event. Returns status GOING or WAITLISTED based on capacity."
+          }
+        },
+        {
+          "name": "Cancel RSVP",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/events/{{event_id}}/rsvp",
+              "host": ["{{base_url}}"],
+              "path": ["api", "events", "{{event_id}}", "rsvp"]
+            },
+            "description": "Cancel RSVP. Returns 200 OK with updated Rsvp object (status=CANCELLED). First WAITLISTED attendee is promoted automatically."
+          }
+        },
+        {
+          "name": "Get All RSVPs for Event",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/events/{{event_id}}/rsvp",
+              "host": ["{{base_url}}"],
+              "path": ["api", "events", "{{event_id}}", "rsvp"]
+            },
+            "description": "List all RSVPs for an event. Requires ORGANIZER role."
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "🔍 Search",
+      "description": "Full-text search via Elasticsearch. All params optional.",
+      "item": [
+        {
+          "name": "Search Events",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/search/events?query=tech&location=Dallas&page=0&size=10",
+              "host": ["{{base_url}}"],
+              "path": ["api", "search", "events"],
+              "query": [
+                { "key": "query",         "value": "tech",       "disabled": false },
+                { "key": "location",      "value": "Dallas",     "disabled": false },
+                { "key": "eventType",     "value": "PUBLIC",     "disabled": true  },
+                { "key": "startAfter",    "value": "2026-06-01", "disabled": true  },
+                { "key": "startBefore",   "value": "2026-12-31", "disabled": true  },
+                { "key": "categoryTypes", "value": "Technology", "disabled": true  },
+                { "key": "page",          "value": "0",          "disabled": false },
+                { "key": "size",          "value": "10",         "disabled": false }
+              ]
+            },
+            "description": "Search events. Disabled params can be enabled for further filtering."
+          }
+        },
+        {
+          "name": "Search Groups",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/search/groups?query=photography&page=0&size=10",
+              "host": ["{{base_url}}"],
+              "path": ["api", "search", "groups"],
+              "query": [
+                { "key": "query",    "value": "photography", "disabled": false },
+                { "key": "isPublic", "value": "true",         "disabled": true  },
+                { "key": "page",     "value": "0",            "disabled": false },
+                { "key": "size",     "value": "10",           "disabled": false }
+              ]
+            },
+            "description": "Search groups by name and description."
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "⭐ Recommendations",
+      "description": "AI-powered recommendations based on user profile.",
+      "item": [
+        {
+          "name": "Recommended Events",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/recommendations/events?page=0&size=10",
+              "host": ["{{base_url}}"],
+              "path": ["api", "recommendations", "events"],
+              "query": [
+                { "key": "page", "value": "0",  "disabled": false },
+                { "key": "size", "value": "10", "disabled": false }
+              ]
+            },
+            "description": "Event recommendations based on the user's category preferences and RSVP history."
+          }
+        },
+        {
+          "name": "Recommended Groups",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/recommendations/groups?page=0&size=10",
+              "host": ["{{base_url}}"],
+              "path": ["api", "recommendations", "groups"],
+              "query": [
+                { "key": "page", "value": "0",  "disabled": false },
+                { "key": "size", "value": "10", "disabled": false }
+              ]
+            },
+            "description": "Group recommendations based on the user's interests."
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "🔔 Notifications",
+      "description": "In-app notifications. Note: base path is /notifications, not /api/notifications.",
+      "item": [
+        {
+          "name": "Get Notifications",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/notifications?page=0&size=20",
+              "host": ["{{base_url}}"],
+              "path": ["notifications"],
+              "query": [
+                { "key": "page", "value": "0",  "disabled": false },
+                { "key": "size", "value": "20", "disabled": false }
+              ]
+            },
+            "description": "Paginated notifications for the authenticated user, newest first."
+          }
+        },
+        {
+          "name": "Get Unread Count",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/notifications/unread-count",
+              "host": ["{{base_url}}"],
+              "path": ["notifications", "unread-count"]
+            },
+            "description": "Returns { \"unread_count\": N }"
+          }
+        },
+        {
+          "name": "Mark Notification as Read",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/notifications/{{notification_id}}/read",
+              "host": ["{{base_url}}"],
+              "path": ["notifications", "{{notification_id}}", "read"]
+            },
+            "description": "Mark a single notification as read."
+          }
+        },
+        {
+          "name": "Mark All as Read",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/notifications/read-all",
+              "host": ["{{base_url}}"],
+              "path": ["notifications", "read-all"]
+            },
+            "description": "Mark all notifications as read. Returns 204 No Content."
+          }
+        },
+        {
+          "name": "Delete Notification",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/notifications/{{notification_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["notifications", "{{notification_id}}"]
+            },
+            "description": "Delete a notification. Returns 204 No Content."
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "🏪 Vendors",
+      "description": "Vendor management, reviews, and linking vendors to events.",
+      "item": [
+        {
+          "name": "Get All Vendors",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/vendors?preferred=false",
+              "host": ["{{base_url}}"],
+              "path": ["api", "vendors"],
+              "query": [
+                { "key": "preferred", "value": "false", "disabled": false }
+              ]
+            },
+            "description": "List all vendors."
+          }
+        },
+        {
+          "name": "Get Preferred Vendors",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/vendors?preferred=true",
+              "host": ["{{base_url}}"],
+              "path": ["api", "vendors"],
+              "query": [
+                { "key": "preferred", "value": "true", "disabled": false }
+              ]
+            },
+            "description": "List only preferred vendors."
+          }
+        },
+        {
+          "name": "Get Vendor by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/vendors/{{vendor_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "vendors", "{{vendor_id}}"]
+            },
+            "description": "Get a single vendor with all their reviews."
+          }
+        },
+        {
+          "name": "Create Vendor (Catering)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/vendors",
+              "host": ["{{base_url}}"],
+              "path": ["api", "vendors"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Delicious Catering Co.\",\n  \"service_type\": \"Catering\",\n  \"contact_email\": \"hello@deliciouscatering.com\",\n  \"contact_phone\": \"+1-214-555-0101\",\n  \"description\": \"Full-service catering for corporate and private events. Farm-to-table menus.\",\n  \"website\": \"https://deliciouscatering.com\",\n  \"is_preferred\": true\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "description": "Add a vendor. Requires ORGANIZER role. Fields use snake_case JSON."
+          }
+        },
+        {
+          "name": "Create Vendor (Photography)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/vendors",
+              "host": ["{{base_url}}"],
+              "path": ["api", "vendors"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Snap & Click Photography\",\n  \"service_type\": \"Photography\",\n  \"contact_email\": \"bookings@snapandclick.com\",\n  \"contact_phone\": \"+1-972-555-0202\",\n  \"description\": \"Award-winning event photography. Candid and portrait specialists.\",\n  \"website\": \"https://snapandclick.com\",\n  \"is_preferred\": false\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "description": "Add a photography vendor. Requires ORGANIZER role."
+          }
+        },
+        {
+          "name": "Update Vendor",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/vendors/{{vendor_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "vendors", "{{vendor_id}}"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Delicious Catering Co.\",\n  \"service_type\": \"Catering\",\n  \"contact_email\": \"events@deliciouscatering.com\",\n  \"contact_phone\": \"+1-214-555-0101\",\n  \"description\": \"Full-service catering. Specialties: BBQ, Mediterranean, and vegan menus.\",\n  \"website\": \"https://deliciouscatering.com\",\n  \"is_preferred\": true\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "description": "Update a vendor. Requires ORGANIZER role."
+          }
+        },
+        {
+          "name": "Add Vendor Review (5 stars)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/vendors/{{vendor_id}}/reviews",
+              "host": ["{{base_url}}"],
+              "path": ["api", "vendors", "{{vendor_id}}", "reviews"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"comment\": \"Outstanding service! Food was fresh and beautifully presented. Guests kept asking for more.\",\n  \"rating\": 5\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "description": "Post a vendor review. rating must be 1–5. Any authenticated user can review."
+          }
+        },
+        {
+          "name": "Add Vendor Review (3 stars)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/vendors/{{vendor_id}}/reviews",
+              "host": ["{{base_url}}"],
+              "path": ["api", "vendors", "{{vendor_id}}", "reviews"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"comment\": \"Good food overall but arrived 20 minutes late to setup. Better communication needed.\",\n  \"rating\": 3\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "description": "Post an average review."
+          }
+        },
+        {
+          "name": "Get Vendor Reviews",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/vendors/{{vendor_id}}/reviews",
+              "host": ["{{base_url}}"],
+              "path": ["api", "vendors", "{{vendor_id}}", "reviews"]
+            },
+            "description": "Get all reviews for a vendor."
+          }
+        },
+        {
+          "name": "Get Vendors for Event",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/vendors/events/{{event_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "vendors", "events", "{{event_id}}"]
+            },
+            "description": "List all vendors linked to a specific event."
+          }
+        },
+        {
+          "name": "Link Vendor to Event",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/vendors/events/{{event_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "vendors", "events", "{{event_id}}"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"vendor_id\": 1\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "description": "Attach a vendor to an event. Requires ORGANIZER role. Returns 201 No Content."
+          }
+        },
+        {
+          "name": "Remove Vendor from Event",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/vendors/events/{{event_id}}/{{vendor_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "vendors", "events", "{{event_id}}", "{{vendor_id}}"]
+            },
+            "description": "Unlink a vendor from an event. Requires ORGANIZER role. Returns 204 No Content."
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "🎫 Support Tickets",
+      "description": "Submit and manage support tickets.",
+      "item": [
+        {
+          "name": "Submit Support Ticket",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/support",
+              "host": ["{{base_url}}"],
+              "path": ["api", "support"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"subject\": \"Cannot upload profile picture\",\n  \"content\": \"When uploading a profile picture larger than 2MB I get a 500 error. Steps: go to profile settings, click upload, select any JPEG over 2MB. Expected: upload or size warning. Actual: HTTP 500.\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "description": "Submit a support ticket. Authenticated user is recorded as submitter. Default status: UNRESOLVED."
+          }
+        },
+        {
+          "name": "Submit Support Ticket (RSVP issue)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/support",
+              "host": ["{{base_url}}"],
+              "path": ["api", "support"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"subject\": \"RSVP button not responding\",\n  \"content\": \"The RSVP button on event ID 5 does not respond when clicked. Tested on Chrome and Safari. No errors in browser console.\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "description": "Example ticket for a bug report."
+          }
+        },
+        {
+          "name": "Get My Tickets",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/support/my",
+              "host": ["{{base_url}}"],
+              "path": ["api", "support", "my"]
+            },
+            "description": "Get all tickets submitted by the authenticated user."
+          }
+        },
+        {
+          "name": "Get Ticket by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/support/{{ticket_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "support", "{{ticket_id}}"]
+            },
+            "description": "Get a specific ticket. Users can only view their own; ADMIN can view any."
+          }
+        },
+        {
+          "name": "Get All Tickets (Admin only)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/support?status=UNRESOLVED",
+              "host": ["{{base_url}}"],
+              "path": ["api", "support"],
+              "query": [
+                { "key": "status", "value": "UNRESOLVED", "disabled": false }
+              ]
+            },
+            "description": "List all tickets. Requires ADMIN role.\nFilter by status: RESOLVED or UNRESOLVED."
+          }
+        },
+        {
+          "name": "Resolve Ticket (Admin only)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/support/{{ticket_id}}/status",
+              "host": ["{{base_url}}"],
+              "path": ["api", "support", "{{ticket_id}}", "status"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"RESOLVED\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "description": "Resolve a ticket. Requires ADMIN role. Valid values: RESOLVED, UNRESOLVED."
+          }
+        },
+        {
+          "name": "Reopen Ticket (Admin only)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/support/{{ticket_id}}/status",
+              "host": ["{{base_url}}"],
+              "path": ["api", "support", "{{ticket_id}}", "status"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"UNRESOLVED\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "description": "Reopen a resolved ticket. Requires ADMIN role."
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "📂 Categories",
+      "description": "Lookup available event/interest categories.",
+      "item": [
+        {
+          "name": "Get All Categories",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/categories",
+              "host": ["{{base_url}}"],
+              "path": ["api", "categories"]
+            },
+            "description": "List all available category types. Use these in event categoryTypes and user preferences."
+          }
+        }
+      ]
+    }
+
+  ]
+}

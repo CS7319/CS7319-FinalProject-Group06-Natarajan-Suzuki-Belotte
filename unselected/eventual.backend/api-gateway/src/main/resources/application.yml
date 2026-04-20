@@ -9,6 +9,16 @@ spring:
           predicates:
             - Path=/api/users/**
 
+        - id: group-service
+          uri: http://localhost:8082
+          predicates:
+            - Path=/api/groups/**
+
+        - id: category-service
+          uri: http://localhost:8082
+          predicates:
+            - Path=/api/categories/**
+
         - id: event-service
           uri: http://localhost:8081
           predicates:
@@ -23,6 +33,11 @@ spring:
           uri: http://localhost:8084
           predicates:
             - Path=/api/search/**
+
+        - id: recommendation-service
+          uri: http://localhost:8084
+          predicates:
+            - Path=/api/recommendations/**
 
         - id: support-service
           uri: http://localhost:8085

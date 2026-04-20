@@ -1,0 +1,18 @@
+package com.CS7319.Group06.eventual.searchservice.config;
+
+import lombok.Data;
+import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.context.annotation.Configuration;
+
+/**
+ * Configuration for the Ollama embedding model server.
+ * Ollama runs as a Docker container defined in /elasticsearch/docker-compose.yml.
+ */
+@Data
+@Configuration
+@ConfigurationProperties(prefix = "ollama")
+public class OllamaConfig {
+
+    private String baseUrl;
+    private String model;
+}

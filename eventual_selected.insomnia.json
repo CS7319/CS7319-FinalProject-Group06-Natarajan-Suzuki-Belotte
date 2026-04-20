@@ -1,0 +1,1043 @@
+{
+  "_type": "export",
+  "__export_format": 4,
+  "__export_date": "2026-04-18T00:00:00.000Z",
+  "__export_source": "eventual-layered-api-collection",
+  "resources": [
+
+    {
+      "_id": "wrk_eventual",
+      "_type": "workspace",
+      "parentId": null,
+      "name": "Eventual — Layered Architecture",
+      "description": "REST API collection for the Eventual monolith (N-Tier / Layered architecture) running on port 8080.\n\n--- GETTING STARTED ---\n1. Run the app: cd selected && docker compose up --build\n2. Create DB: psql -U postgres -c 'CREATE DATABASE eventual;'\n3. Run schema: psql -U postgres -d eventual -f selected/eventual.database/schema.sql\n4. Register via POST /api/users/register\n5. Login via POST /api/users/login — copy the 'token' from the response\n6. Open Manage Environments → paste token into the 'token' variable\n\n--- ROLES ---\nORGANIZER  — can create/update events, groups, vendors\nPARTICIPANT — can RSVP, join groups, post reviews\nADMIN       — cannot register via API; set directly in DB:\n  UPDATE users SET role = 'ADMIN' WHERE email = 'admin@example.com';",
+      "scope": "collection"
+    },
+
+    {
+      "_id": "env_base",
+      "_type": "environment",
+      "parentId": "wrk_eventual",
+      "name": "Base Environment",
+      "data": {
+        "base_url": "http://localhost:8080",
+        "token": "<paste JWT token here after login>",
+        "organizer_email": "alice@example.com",
+        "participant_email": "bob@example.com",
+        "event_id": "1",
+        "group_id": "1",
+        "vendor_id": "1",
+        "ticket_id": "1",
+        "notification_id": "1",
+        "join_request_id": "1"
+      },
+      "color": null,
+      "isPrivate": false
+    },
+
+    {
+      "_id": "fld_auth",
+      "_type": "request_group",
+      "parentId": "wrk_eventual",
+      "name": "🔐 Auth & Users",
+      "description": "User registration, login, and profile management.\nPublic: /register and /login — all others require Bearer token.",
+      "metaSortKey": -1000
+    },
+    {
+      "_id": "fld_events",
+      "_type": "request_group",
+      "parentId": "wrk_eventual",
+      "name": "📅 Events",
+      "description": "Create, read, update, and delete events. CUD requires ORGANIZER role.",
+      "metaSortKey": -900
+    },
+    {
+      "_id": "fld_groups",
+      "_type": "request_group",
+      "parentId": "wrk_eventual",
+      "name": "👥 Groups",
+      "description": "Group management and join request workflow.",
+      "metaSortKey": -800
+    },
+    {
+      "_id": "fld_rsvp",
+      "_type": "request_group",
+      "parentId": "wrk_eventual",
+      "name": "🎟️ RSVPs",
+      "description": "RSVP to events and manage attendance.",
+      "metaSortKey": -700
+    },
+    {
+      "_id": "fld_search",
+      "_type": "request_group",
+      "parentId": "wrk_eventual",
+      "name": "🔍 Search",
+      "description": "Full-text and filtered search for events and groups via Elasticsearch.",
+      "metaSortKey": -600
+    },
+    {
+      "_id": "fld_recs",
+      "_type": "request_group",
+      "parentId": "wrk_eventual",
+      "name": "⭐ Recommendations",
+      "description": "AI-powered event and group recommendations based on user profile.",
+      "metaSortKey": -500
+    },
+    {
+      "_id": "fld_notifs",
+      "_type": "request_group",
+      "parentId": "wrk_eventual",
+      "name": "🔔 Notifications",
+      "description": "View and manage in-app notifications.",
+      "metaSortKey": -400
+    },
+    {
+      "_id": "fld_vendors",
+      "_type": "request_group",
+      "parentId": "wrk_eventual",
+      "name": "🏪 Vendors",
+      "description": "Vendor management, reviews, and linking vendors to events.",
+      "metaSortKey": -300
+    },
+    {
+      "_id": "fld_support",
+      "_type": "request_group",
+      "parentId": "wrk_eventual",
+      "name": "🎫 Support Tickets",
+      "description": "Submit and manage support tickets.",
+      "metaSortKey": -200
+    },
+    {
+      "_id": "fld_cats",
+      "_type": "request_group",
+      "parentId": "wrk_eventual",
+      "name": "📂 Categories",
+      "description": "Lookup available event/interest categories.",
+      "metaSortKey": -100
+    },
+
+    {
+      "_id": "req_register_organizer",
+      "_type": "request",
+      "parentId": "fld_auth",
+      "name": "Register Organizer",
+      "method": "POST",
+      "url": "{{base_url}}/api/users/register",
+      "description": "Register as an ORGANIZER — can create events, groups, and vendors.\nValid roles: ORGANIZER, PARTICIPANT\nDo NOT set Content-Type manually — Insomnia sets it with the multipart boundary automatically.",
+      "headers": [],
+      "body": {
+        "mimeType": "multipart/form-data",
+        "params": [
+          { "id": "p1",  "name": "email",         "value": "alice@example.com",                   "type": "text" },
+          { "id": "p2",  "name": "name",           "value": "Alice Johnson",                       "type": "text" },
+          { "id": "p3",  "name": "password",       "value": "Password123!",                        "type": "text" },
+          { "id": "p4",  "name": "role",           "value": "ORGANIZER",                           "type": "text" },
+          { "id": "p5",  "name": "pronoun",        "value": "she/her",                             "type": "text" },
+          { "id": "p6",  "name": "location",       "value": "Dallas, TX",                          "type": "text" },
+          { "id": "p7",  "name": "aboutMe",        "value": "Event organizer and tech enthusiast", "type": "text" },
+          { "id": "p8",  "name": "categoryTypes",  "value": "Technology",                          "type": "text" },
+          { "id": "p9",  "name": "categoryTypes",  "value": "Music",                               "type": "text" },
+          { "id": "p10", "name": "profilePicture", "value": "",                                    "type": "file", "disabled": true }
+        ]
+      },
+      "metaSortKey": -1000
+    },
+
+    {
+      "_id": "req_register_participant",
+      "_type": "request",
+      "parentId": "fld_auth",
+      "name": "Register Participant",
+      "method": "POST",
+      "url": "{{base_url}}/api/users/register",
+      "description": "Register as a PARTICIPANT — can RSVP to events, join groups, and post vendor reviews.",
+      "headers": [],
+      "body": {
+        "mimeType": "multipart/form-data",
+        "params": [
+          { "id": "p1", "name": "email",        "value": "bob@example.com",  "type": "text" },
+          { "id": "p2", "name": "name",         "value": "Bob Smith",         "type": "text" },
+          { "id": "p3", "name": "password",     "value": "Password123!",      "type": "text" },
+          { "id": "p4", "name": "role",         "value": "PARTICIPANT",       "type": "text" },
+          { "id": "p5", "name": "location",     "value": "Dallas, TX",        "type": "text" },
+          { "id": "p6", "name": "categoryTypes","value": "Sports",            "type": "text" },
+          { "id": "p7", "name": "categoryTypes","value": "Gaming",            "type": "text" }
+        ]
+      },
+      "metaSortKey": -990
+    },
+
+    {
+      "_id": "req_register_admin",
+      "_type": "request",
+      "parentId": "fld_auth",
+      "name": "Register Admin (then promote in DB)",
+      "method": "POST",
+      "url": "{{base_url}}/api/users/register",
+      "description": "ADMIN is not a registerable role (UserRole enum only has ORGANIZER and PARTICIPANT).\nStep 1: Register as ORGANIZER using this request.\nStep 2: Promote to ADMIN directly in PostgreSQL:\n  UPDATE users SET role = 'ADMIN' WHERE email = 'admin@example.com';\nStep 3: Login again to get a fresh JWT with the ADMIN role.",
+      "headers": [],
+      "body": {
+        "mimeType": "multipart/form-data",
+        "params": [
+          { "id": "p1", "name": "email",    "value": "admin@example.com", "type": "text" },
+          { "id": "p2", "name": "name",     "value": "Super Admin",        "type": "text" },
+          { "id": "p3", "name": "password", "value": "Admin123!",          "type": "text" },
+          { "id": "p4", "name": "role",     "value": "ORGANIZER",          "type": "text" }
+        ]
+      },
+      "metaSortKey": -980
+    },
+
+    {
+      "_id": "req_login",
+      "_type": "request",
+      "parentId": "fld_auth",
+      "name": "Login",
+      "method": "POST",
+      "url": "{{base_url}}/api/users/login",
+      "description": "Returns: { token, email, role }\nCopy the 'token' value and paste it into the Base Environment 'token' variable.",
+      "headers": [
+        { "id": "h1", "name": "Content-Type", "value": "application/json" }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"email\": \"alice@example.com\",\n  \"password\": \"Password123!\"\n}"
+      },
+      "metaSortKey": -970
+    },
+
+    {
+      "_id": "req_login_admin",
+      "_type": "request",
+      "parentId": "fld_auth",
+      "name": "Login (Admin)",
+      "method": "POST",
+      "url": "{{base_url}}/api/users/login",
+      "description": "Login after promoting the user to ADMIN in the DB. The returned token will carry the ADMIN role.",
+      "headers": [
+        { "id": "h1", "name": "Content-Type", "value": "application/json" }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"email\": \"admin@example.com\",\n  \"password\": \"Admin123!\"\n}"
+      },
+      "metaSortKey": -960
+    },
+
+    {
+      "_id": "req_update_user",
+      "_type": "request",
+      "parentId": "fld_auth",
+      "name": "Update User Profile",
+      "method": "PUT",
+      "url": "{{base_url}}/api/users/{{organizer_email}}",
+      "description": "Update profile for the given email. A user can only update their own profile.",
+      "headers": [
+        { "id": "h1", "name": "Authorization", "value": "Bearer {{token}}" }
+      ],
+      "body": {
+        "mimeType": "multipart/form-data",
+        "params": [
+          { "id": "p1", "name": "name",           "value": "Alice Johnson",                               "type": "text" },
+          { "id": "p2", "name": "pronoun",        "value": "she/her",                                     "type": "text" },
+          { "id": "p3", "name": "location",       "value": "Dallas, TX",                                  "type": "text" },
+          { "id": "p4", "name": "aboutMe",        "value": "Passionate event organizer and tech lover.",  "type": "text" },
+          { "id": "p5", "name": "categoryTypes",  "value": "Technology",                                  "type": "text" },
+          { "id": "p6", "name": "categoryTypes",  "value": "Photography",                                 "type": "text" },
+          { "id": "p7", "name": "profilePicture", "value": "",                                            "type": "file", "disabled": true }
+        ]
+      },
+      "metaSortKey": -950
+    },
+
+    {
+      "_id": "req_create_event",
+      "_type": "request",
+      "parentId": "fld_events",
+      "name": "Create Event (PUBLIC)",
+      "method": "POST",
+      "url": "{{base_url}}/api/events",
+      "description": "Create a public event. Requires ORGANIZER role.\nFields are sent as multipart form fields (camelCase — @ModelAttribute binding, not JSON).\nValid eventType values: PUBLIC, GROUP",
+      "headers": [
+        { "id": "h1", "name": "Authorization", "value": "Bearer {{token}}" }
+      ],
+      "body": {
+        "mimeType": "multipart/form-data",
+        "params": [
+          { "id": "p1",  "name": "title",         "value": "Summer Tech Meetup",                              "type": "text" },
+          { "id": "p2",  "name": "description",   "value": "A networking event for Dallas tech enthusiasts.", "type": "text" },
+          { "id": "p3",  "name": "location",      "value": "Dallas Convention Center, Dallas TX",            "type": "text" },
+          { "id": "p4",  "name": "startDateTime", "value": "2026-07-15T18:00:00",                            "type": "text" },
+          { "id": "p5",  "name": "endDateTime",   "value": "2026-07-15T21:00:00",                            "type": "text" },
+          { "id": "p6",  "name": "eventType",     "value": "PUBLIC",                                         "type": "text" },
+          { "id": "p7",  "name": "capacity",      "value": "80",                                             "type": "text" },
+          { "id": "p8",  "name": "categoryTypes", "value": "Technology",                                     "type": "text" },
+          { "id": "p9",  "name": "categoryTypes", "value": "Business & Networking",                          "type": "text" },
+          { "id": "p10", "name": "eventPicture",  "value": "",                                               "type": "file", "disabled": true }
+        ]
+      },
+      "metaSortKey": -1000
+    },
+
+    {
+      "_id": "req_create_group_event",
+      "_type": "request",
+      "parentId": "fld_events",
+      "name": "Create Event (GROUP)",
+      "method": "POST",
+      "url": "{{base_url}}/api/events",
+      "description": "Create a group-scoped event. Requires ORGANIZER role.\ngroupId must reference an existing group.",
+      "headers": [
+        { "id": "h1", "name": "Authorization", "value": "Bearer {{token}}" }
+      ],
+      "body": {
+        "mimeType": "multipart/form-data",
+        "params": [
+          { "id": "p1", "name": "title",         "value": "Photography Workshop for Members",                          "type": "text" },
+          { "id": "p2", "name": "description",   "value": "Exclusive hands-on photography workshop for group members.", "type": "text" },
+          { "id": "p3", "name": "location",      "value": "Studio 5, Deep Ellum, Dallas TX",                          "type": "text" },
+          { "id": "p4", "name": "startDateTime", "value": "2026-08-10T10:00:00",                                       "type": "text" },
+          { "id": "p5", "name": "endDateTime",   "value": "2026-08-10T14:00:00",                                       "type": "text" },
+          { "id": "p6", "name": "eventType",     "value": "GROUP",                                                     "type": "text" },
+          { "id": "p7", "name": "groupId",       "value": "{{group_id}}",                                              "type": "text" },
+          { "id": "p8", "name": "capacity",      "value": "20",                                                        "type": "text" },
+          { "id": "p9", "name": "categoryTypes", "value": "Photography",                                               "type": "text" }
+        ]
+      },
+      "metaSortKey": -990
+    },
+
+    {
+      "_id": "req_get_event",
+      "_type": "request",
+      "parentId": "fld_events",
+      "name": "Get Event by ID",
+      "method": "GET",
+      "url": "{{base_url}}/api/events/{{event_id}}",
+      "description": "Fetch full event details including RSVP counts. Requires authentication.",
+      "headers": [
+        { "id": "h1", "name": "Authorization", "value": "Bearer {{token}}" }
+      ],
+      "body": {},
+      "metaSortKey": -980
+    },
+
+    {
+      "_id": "req_update_event",
+      "_type": "request",
+      "parentId": "fld_events",
+      "name": "Update Event",
+      "method": "PUT",
+      "url": "{{base_url}}/api/events/{{event_id}}",
+      "description": "Update an existing event. Requires ORGANIZER role.",
+      "headers": [
+        { "id": "h1", "name": "Authorization", "value": "Bearer {{token}}" }
+      ],
+      "body": {
+        "mimeType": "multipart/form-data",
+        "params": [
+          { "id": "p1", "name": "title",         "value": "Summer Tech Meetup 2026 (Updated)",                   "type": "text" },
+          { "id": "p2", "name": "description",   "value": "Updated: Join us for talks, demos, and networking.",  "type": "text" },
+          { "id": "p3", "name": "location",      "value": "Omni Dallas Hotel, 555 S Lamar, Dallas TX",          "type": "text" },
+          { "id": "p4", "name": "startDateTime", "value": "2026-07-15T17:30:00",                                 "type": "text" },
+          { "id": "p5", "name": "endDateTime",   "value": "2026-07-15T22:00:00",                                 "type": "text" },
+          { "id": "p6", "name": "eventType",     "value": "PUBLIC",                                              "type": "text" },
+          { "id": "p7", "name": "capacity",      "value": "120",                                                 "type": "text" },
+          { "id": "p8", "name": "categoryTypes", "value": "Technology",                                         "type": "text" },
+          { "id": "p9", "name": "categoryTypes", "value": "Business & Networking",                              "type": "text" }
+        ]
+      },
+      "metaSortKey": -970
+    },
+
+    {
+      "_id": "req_delete_event",
+      "_type": "request",
+      "parentId": "fld_events",
+      "name": "Delete Event",
+      "method": "DELETE",
+      "url": "{{base_url}}/api/events/{{event_id}}",
+      "description": "Delete an event. Requires ORGANIZER role. Returns 204 No Content. Sends cancellation notifications to all RSVPs.",
+      "headers": [
+        { "id": "h1", "name": "Authorization", "value": "Bearer {{token}}" }
+      ],
+      "body": {},
+      "metaSortKey": -960
+    },
+
+    {
+      "_id": "req_create_group",
+      "_type": "request",
+      "parentId": "fld_groups",
+      "name": "Create Group (Public)",
+      "method": "POST",
+      "url": "{{base_url}}/api/groups",
+      "description": "Create a public group. Requires ORGANIZER role.\nis_public=true: anyone can join immediately.\nis_public=false: joining creates a pending request needing approval.",
+      "headers": [
+        { "id": "h1", "name": "Authorization", "value": "Bearer {{token}}" },
+        { "id": "h2", "name": "Content-Type",  "value": "application/json" }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"name\": \"Dallas Tech Enthusiasts\",\n  \"description\": \"A community for software engineers and tech professionals in Dallas.\",\n  \"is_public\": true\n}"
+      },
+      "metaSortKey": -1000
+    },
+
+    {
+      "_id": "req_create_private_group",
+      "_type": "request",
+      "parentId": "fld_groups",
+      "name": "Create Group (Private)",
+      "method": "POST",
+      "url": "{{base_url}}/api/groups",
+      "description": "Create a private group — membership requires organizer approval. Requires ORGANIZER role.",
+      "headers": [
+        { "id": "h1", "name": "Authorization", "value": "Bearer {{token}}" },
+        { "id": "h2", "name": "Content-Type",  "value": "application/json" }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"name\": \"Photography Club\",\n  \"description\": \"Exclusive group for serious photographers in the DFW area.\",\n  \"is_public\": false\n}"
+      },
+      "metaSortKey": -990
+    },
+
+    {
+      "_id": "req_update_group",
+      "_type": "request",
+      "parentId": "fld_groups",
+      "name": "Update Group",
+      "method": "PUT",
+      "url": "{{base_url}}/api/groups/{{group_id}}",
+      "description": "Update group details. Requires ORGANIZER role.",
+      "headers": [
+        { "id": "h1", "name": "Authorization", "value": "Bearer {{token}}" },
+        { "id": "h2", "name": "Content-Type",  "value": "application/json" }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"name\": \"Dallas Tech Enthusiasts\",\n  \"description\": \"The premier community for developers, designers, and tech founders in Dallas.\",\n  \"is_public\": true\n}"
+      },
+      "metaSortKey": -980
+    },
+
+    {
+      "_id": "req_join_group",
+      "_type": "request",
+      "parentId": "fld_groups",
+      "name": "Join Group",
+      "method": "POST",
+      "url": "{{base_url}}/api/groups/{{group_id}}/join",
+      "description": "Join a group.\nPublic group → 200 OK, immediately added as member.\nPrivate group → 202 Accepted, creates a pending join request.",
+      "headers": [
+        { "id": "h1", "name": "Authorization", "value": "Bearer {{token}}" }
+      ],
+      "body": {},
+      "metaSortKey": -970
+    },
+
+    {
+      "_id": "req_get_join_requests",
+      "_type": "request",
+      "parentId": "fld_groups",
+      "name": "Get Pending Join Requests",
+      "method": "GET",
+      "url": "{{base_url}}/api/groups/{{group_id}}/join-requests",
+      "description": "List pending membership requests for a group. Requires ORGANIZER role.",
+      "headers": [
+        { "id": "h1", "name": "Authorization", "value": "Bearer {{token}}" }
+      ],
+      "body": {},
+      "metaSortKey": -960
+    },
+
+    {
+      "_id": "req_approve_join",
+      "_type": "request",
+      "parentId": "fld_groups",
+      "name": "Approve Join Request",
+      "method": "POST",
+      "url": "{{base_url}}/api/groups/{{group_id}}/join-requests/{{join_request_id}}/approve",
+      "description": "Approve a pending join request. Requires ORGANIZER role. Adds the requester to group members and sends approval notification.",
+      "headers": [
+        { "id": "h1", "name": "Authorization", "value": "Bearer {{token}}" }
+      ],
+      "body": {},
+      "metaSortKey": -950
+    },
+
+    {
+      "_id": "req_reject_join",
+      "_type": "request",
+      "parentId": "fld_groups",
+      "name": "Reject Join Request",
+      "method": "POST",
+      "url": "{{base_url}}/api/groups/{{group_id}}/join-requests/{{join_request_id}}/reject",
+      "description": "Reject a pending join request. Requires ORGANIZER role. Sends rejection notification to requester.",
+      "headers": [
+        { "id": "h1", "name": "Authorization", "value": "Bearer {{token}}" }
+      ],
+      "body": {},
+      "metaSortKey": -940
+    },
+
+    {
+      "_id": "req_rsvp",
+      "_type": "request",
+      "parentId": "fld_rsvp",
+      "name": "RSVP to Event",
+      "method": "POST",
+      "url": "{{base_url}}/api/events/{{event_id}}/rsvp",
+      "description": "RSVP to an event.\nReturns status GOING (if capacity allows) or WAITLISTED.\nSends notification to the organizer.",
+      "headers": [
+        { "id": "h1", "name": "Authorization", "value": "Bearer {{token}}" }
+      ],
+      "body": {},
+      "metaSortKey": -1000
+    },
+
+    {
+      "_id": "req_cancel_rsvp",
+      "_type": "request",
+      "parentId": "fld_rsvp",
+      "name": "Cancel RSVP",
+      "method": "DELETE",
+      "url": "{{base_url}}/api/events/{{event_id}}/rsvp",
+      "description": "Cancel an existing RSVP.\nReturns 200 OK with the updated Rsvp object (status = CANCELLED).\nThe first WAITLISTED attendee is automatically promoted to GOING.",
+      "headers": [
+        { "id": "h1", "name": "Authorization", "value": "Bearer {{token}}" }
+      ],
+      "body": {},
+      "metaSortKey": -990
+    },
+
+    {
+      "_id": "req_get_rsvps",
+      "_type": "request",
+      "parentId": "fld_rsvp",
+      "name": "Get All RSVPs for Event",
+      "method": "GET",
+      "url": "{{base_url}}/api/events/{{event_id}}/rsvp",
+      "description": "List all RSVPs (GOING and WAITLISTED) for an event. Requires ORGANIZER role.",
+      "headers": [
+        { "id": "h1", "name": "Authorization", "value": "Bearer {{token}}" }
+      ],
+      "body": {},
+      "metaSortKey": -980
+    },
+
+    {
+      "_id": "req_search_events",
+      "_type": "request",
+      "parentId": "fld_search",
+      "name": "Search Events",
+      "method": "GET",
+      "url": "{{base_url}}/api/search/events",
+      "description": "Full-text search across event titles and descriptions via Elasticsearch.\nAll query params are optional — omit any to broaden the search.\nRequires authentication (all endpoints except /register and /login need a token).",
+      "headers": [
+        { "id": "h1", "name": "Authorization", "value": "Bearer {{token}}" }
+      ],
+      "parameters": [
+        { "id": "qp1", "name": "query",         "value": "tech",         "disabled": false },
+        { "id": "qp2", "name": "location",      "value": "Dallas",       "disabled": false },
+        { "id": "qp3", "name": "eventType",     "value": "PUBLIC",       "disabled": true  },
+        { "id": "qp4", "name": "startAfter",    "value": "2026-06-01",   "disabled": true  },
+        { "id": "qp5", "name": "startBefore",   "value": "2026-12-31",   "disabled": true  },
+        { "id": "qp6", "name": "categoryTypes", "value": "Technology",   "disabled": true  },
+        { "id": "qp7", "name": "page",          "value": "0",            "disabled": false },
+        { "id": "qp8", "name": "size",          "value": "10",           "disabled": false }
+      ],
+      "body": {},
+      "metaSortKey": -1000
+    },
+
+    {
+      "_id": "req_search_groups",
+      "_type": "request",
+      "parentId": "fld_search",
+      "name": "Search Groups",
+      "method": "GET",
+      "url": "{{base_url}}/api/search/groups",
+      "description": "Full-text search across group names and descriptions. Requires authentication.",
+      "headers": [
+        { "id": "h1", "name": "Authorization", "value": "Bearer {{token}}" }
+      ],
+      "parameters": [
+        { "id": "qp1", "name": "query",    "value": "photography", "disabled": false },
+        { "id": "qp2", "name": "isPublic", "value": "true",         "disabled": true  },
+        { "id": "qp3", "name": "page",     "value": "0",            "disabled": false },
+        { "id": "qp4", "name": "size",     "value": "10",           "disabled": false }
+      ],
+      "body": {},
+      "metaSortKey": -990
+    },
+
+    {
+      "_id": "req_rec_events",
+      "_type": "request",
+      "parentId": "fld_recs",
+      "name": "Recommended Events",
+      "method": "GET",
+      "url": "{{base_url}}/api/recommendations/events",
+      "description": "AI-powered event recommendations based on the authenticated user's category preferences and RSVP history.",
+      "headers": [
+        { "id": "h1", "name": "Authorization", "value": "Bearer {{token}}" }
+      ],
+      "parameters": [
+        { "id": "qp1", "name": "page", "value": "0",  "disabled": false },
+        { "id": "qp2", "name": "size", "value": "10", "disabled": false }
+      ],
+      "body": {},
+      "metaSortKey": -1000
+    },
+
+    {
+      "_id": "req_rec_groups",
+      "_type": "request",
+      "parentId": "fld_recs",
+      "name": "Recommended Groups",
+      "method": "GET",
+      "url": "{{base_url}}/api/recommendations/groups",
+      "description": "AI-powered group recommendations based on the authenticated user's profile and interests.",
+      "headers": [
+        { "id": "h1", "name": "Authorization", "value": "Bearer {{token}}" }
+      ],
+      "parameters": [
+        { "id": "qp1", "name": "page", "value": "0",  "disabled": false },
+        { "id": "qp2", "name": "size", "value": "10", "disabled": false }
+      ],
+      "body": {},
+      "metaSortKey": -990
+    },
+
+    {
+      "_id": "req_get_notifs",
+      "_type": "request",
+      "parentId": "fld_notifs",
+      "name": "Get Notifications",
+      "method": "GET",
+      "url": "{{base_url}}/notifications",
+      "description": "Get paginated notifications for the authenticated user, newest first.\nNote: base path is /notifications — NOT /api/notifications.",
+      "headers": [
+        { "id": "h1", "name": "Authorization", "value": "Bearer {{token}}" }
+      ],
+      "parameters": [
+        { "id": "qp1", "name": "page", "value": "0",  "disabled": false },
+        { "id": "qp2", "name": "size", "value": "20", "disabled": false }
+      ],
+      "body": {},
+      "metaSortKey": -1000
+    },
+
+    {
+      "_id": "req_unread_count",
+      "_type": "request",
+      "parentId": "fld_notifs",
+      "name": "Get Unread Count",
+      "method": "GET",
+      "url": "{{base_url}}/notifications/unread-count",
+      "description": "Returns: { \"unread_count\": 3 }",
+      "headers": [
+        { "id": "h1", "name": "Authorization", "value": "Bearer {{token}}" }
+      ],
+      "body": {},
+      "metaSortKey": -990
+    },
+
+    {
+      "_id": "req_mark_read",
+      "_type": "request",
+      "parentId": "fld_notifs",
+      "name": "Mark Notification as Read",
+      "method": "PATCH",
+      "url": "{{base_url}}/notifications/{{notification_id}}/read",
+      "description": "Mark a single notification as read.",
+      "headers": [
+        { "id": "h1", "name": "Authorization", "value": "Bearer {{token}}" }
+      ],
+      "body": {},
+      "metaSortKey": -980
+    },
+
+    {
+      "_id": "req_mark_all_read",
+      "_type": "request",
+      "parentId": "fld_notifs",
+      "name": "Mark All as Read",
+      "method": "PATCH",
+      "url": "{{base_url}}/notifications/read-all",
+      "description": "Mark all of the authenticated user's notifications as read. Returns 204 No Content.",
+      "headers": [
+        { "id": "h1", "name": "Authorization", "value": "Bearer {{token}}" }
+      ],
+      "body": {},
+      "metaSortKey": -970
+    },
+
+    {
+      "_id": "req_delete_notif",
+      "_type": "request",
+      "parentId": "fld_notifs",
+      "name": "Delete Notification",
+      "method": "DELETE",
+      "url": "{{base_url}}/notifications/{{notification_id}}",
+      "description": "Delete a notification. Returns 204 No Content.",
+      "headers": [
+        { "id": "h1", "name": "Authorization", "value": "Bearer {{token}}" }
+      ],
+      "body": {},
+      "metaSortKey": -960
+    },
+
+    {
+      "_id": "req_get_vendors",
+      "_type": "request",
+      "parentId": "fld_vendors",
+      "name": "Get All Vendors",
+      "method": "GET",
+      "url": "{{base_url}}/api/vendors",
+      "description": "List all vendors. Pass ?preferred=true to return only preferred vendors.",
+      "headers": [
+        { "id": "h1", "name": "Authorization", "value": "Bearer {{token}}" }
+      ],
+      "parameters": [
+        { "id": "qp1", "name": "preferred", "value": "false", "disabled": false }
+      ],
+      "body": {},
+      "metaSortKey": -1000
+    },
+
+    {
+      "_id": "req_get_preferred_vendors",
+      "_type": "request",
+      "parentId": "fld_vendors",
+      "name": "Get Preferred Vendors",
+      "method": "GET",
+      "url": "{{base_url}}/api/vendors",
+      "description": "List only vendors marked as preferred (is_preferred = true).",
+      "headers": [
+        { "id": "h1", "name": "Authorization", "value": "Bearer {{token}}" }
+      ],
+      "parameters": [
+        { "id": "qp1", "name": "preferred", "value": "true", "disabled": false }
+      ],
+      "body": {},
+      "metaSortKey": -990
+    },
+
+    {
+      "_id": "req_get_vendor",
+      "_type": "request",
+      "parentId": "fld_vendors",
+      "name": "Get Vendor by ID",
+      "method": "GET",
+      "url": "{{base_url}}/api/vendors/{{vendor_id}}",
+      "description": "Get a single vendor including all their reviews.",
+      "headers": [
+        { "id": "h1", "name": "Authorization", "value": "Bearer {{token}}" }
+      ],
+      "body": {},
+      "metaSortKey": -980
+    },
+
+    {
+      "_id": "req_create_vendor",
+      "_type": "request",
+      "parentId": "fld_vendors",
+      "name": "Create Vendor (Catering)",
+      "method": "POST",
+      "url": "{{base_url}}/api/vendors",
+      "description": "Add a new vendor. Requires ORGANIZER role.\nAll fields use snake_case JSON (@JsonNaming SnakeCaseStrategy).",
+      "headers": [
+        { "id": "h1", "name": "Authorization", "value": "Bearer {{token}}" },
+        { "id": "h2", "name": "Content-Type",  "value": "application/json" }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"name\": \"Delicious Catering Co.\",\n  \"service_type\": \"Catering\",\n  \"contact_email\": \"hello@deliciouscatering.com\",\n  \"contact_phone\": \"+1-214-555-0101\",\n  \"description\": \"Full-service catering for corporate and private events. Farm-to-table menus.\",\n  \"website\": \"https://deliciouscatering.com\",\n  \"is_preferred\": true\n}"
+      },
+      "metaSortKey": -970
+    },
+
+    {
+      "_id": "req_create_vendor2",
+      "_type": "request",
+      "parentId": "fld_vendors",
+      "name": "Create Vendor (Photography)",
+      "method": "POST",
+      "url": "{{base_url}}/api/vendors",
+      "description": "Add a photography vendor. Requires ORGANIZER role.",
+      "headers": [
+        { "id": "h1", "name": "Authorization", "value": "Bearer {{token}}" },
+        { "id": "h2", "name": "Content-Type",  "value": "application/json" }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"name\": \"Snap & Click Photography\",\n  \"service_type\": \"Photography\",\n  \"contact_email\": \"bookings@snapandclick.com\",\n  \"contact_phone\": \"+1-972-555-0202\",\n  \"description\": \"Award-winning event photography. Candid and portrait specialists.\",\n  \"website\": \"https://snapandclick.com\",\n  \"is_preferred\": false\n}"
+      },
+      "metaSortKey": -960
+    },
+
+    {
+      "_id": "req_update_vendor",
+      "_type": "request",
+      "parentId": "fld_vendors",
+      "name": "Update Vendor",
+      "method": "PUT",
+      "url": "{{base_url}}/api/vendors/{{vendor_id}}",
+      "description": "Update an existing vendor. Requires ORGANIZER role.",
+      "headers": [
+        { "id": "h1", "name": "Authorization", "value": "Bearer {{token}}" },
+        { "id": "h2", "name": "Content-Type",  "value": "application/json" }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"name\": \"Delicious Catering Co.\",\n  \"service_type\": \"Catering\",\n  \"contact_email\": \"events@deliciouscatering.com\",\n  \"contact_phone\": \"+1-214-555-0101\",\n  \"description\": \"Full-service catering. Specialties: BBQ, Mediterranean, and vegan menus.\",\n  \"website\": \"https://deliciouscatering.com\",\n  \"is_preferred\": true\n}"
+      },
+      "metaSortKey": -950
+    },
+
+    {
+      "_id": "req_add_review",
+      "_type": "request",
+      "parentId": "fld_vendors",
+      "name": "Add Vendor Review (5 stars)",
+      "method": "POST",
+      "url": "{{base_url}}/api/vendors/{{vendor_id}}/reviews",
+      "description": "Post a review for a vendor. Rating must be 1–5. Any authenticated user can review.",
+      "headers": [
+        { "id": "h1", "name": "Authorization", "value": "Bearer {{token}}" },
+        { "id": "h2", "name": "Content-Type",  "value": "application/json" }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"comment\": \"Outstanding catering service! Food was fresh and beautifully presented. Guests kept asking for more.\",\n  \"rating\": 5\n}"
+      },
+      "metaSortKey": -940
+    },
+
+    {
+      "_id": "req_add_review2",
+      "_type": "request",
+      "parentId": "fld_vendors",
+      "name": "Add Vendor Review (3 stars)",
+      "method": "POST",
+      "url": "{{base_url}}/api/vendors/{{vendor_id}}/reviews",
+      "description": "Post an average review.",
+      "headers": [
+        { "id": "h1", "name": "Authorization", "value": "Bearer {{token}}" },
+        { "id": "h2", "name": "Content-Type",  "value": "application/json" }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"comment\": \"Good food overall but arrived 20 minutes late to setup. Better communication needed.\",\n  \"rating\": 3\n}"
+      },
+      "metaSortKey": -930
+    },
+
+    {
+      "_id": "req_get_reviews",
+      "_type": "request",
+      "parentId": "fld_vendors",
+      "name": "Get Vendor Reviews",
+      "method": "GET",
+      "url": "{{base_url}}/api/vendors/{{vendor_id}}/reviews",
+      "description": "Retrieve all reviews for a specific vendor.",
+      "headers": [
+        { "id": "h1", "name": "Authorization", "value": "Bearer {{token}}" }
+      ],
+      "body": {},
+      "metaSortKey": -920
+    },
+
+    {
+      "_id": "req_get_vendors_by_event",
+      "_type": "request",
+      "parentId": "fld_vendors",
+      "name": "Get Vendors for Event",
+      "method": "GET",
+      "url": "{{base_url}}/api/vendors/events/{{event_id}}",
+      "description": "List all vendors linked to a specific event.",
+      "headers": [
+        { "id": "h1", "name": "Authorization", "value": "Bearer {{token}}" }
+      ],
+      "body": {},
+      "metaSortKey": -910
+    },
+
+    {
+      "_id": "req_link_vendor",
+      "_type": "request",
+      "parentId": "fld_vendors",
+      "name": "Link Vendor to Event",
+      "method": "POST",
+      "url": "{{base_url}}/api/vendors/events/{{event_id}}",
+      "description": "Attach a vendor to an event. Requires ORGANIZER role. Returns 201 Created (no body).",
+      "headers": [
+        { "id": "h1", "name": "Authorization", "value": "Bearer {{token}}" },
+        { "id": "h2", "name": "Content-Type",  "value": "application/json" }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"vendor_id\": 1\n}"
+      },
+      "metaSortKey": -900
+    },
+
+    {
+      "_id": "req_unlink_vendor",
+      "_type": "request",
+      "parentId": "fld_vendors",
+      "name": "Remove Vendor from Event",
+      "method": "DELETE",
+      "url": "{{base_url}}/api/vendors/events/{{event_id}}/{{vendor_id}}",
+      "description": "Unlink a vendor from an event. Requires ORGANIZER role. Returns 204 No Content.",
+      "headers": [
+        { "id": "h1", "name": "Authorization", "value": "Bearer {{token}}" }
+      ],
+      "body": {},
+      "metaSortKey": -890
+    },
+
+    {
+      "_id": "req_submit_ticket",
+      "_type": "request",
+      "parentId": "fld_support",
+      "name": "Submit Support Ticket",
+      "method": "POST",
+      "url": "{{base_url}}/api/support",
+      "description": "Submit a support ticket. The authenticated user is recorded as the submitter. Default status: UNRESOLVED.",
+      "headers": [
+        { "id": "h1", "name": "Authorization", "value": "Bearer {{token}}" },
+        { "id": "h2", "name": "Content-Type",  "value": "application/json" }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"subject\": \"Cannot upload profile picture\",\n  \"content\": \"When uploading a profile picture larger than 2MB I get a 500 error. Steps: go to profile settings, click upload, select any JPEG over 2MB. Expected: upload or size warning. Actual: HTTP 500.\"\n}"
+      },
+      "metaSortKey": -1000
+    },
+
+    {
+      "_id": "req_submit_ticket2",
+      "_type": "request",
+      "parentId": "fld_support",
+      "name": "Submit Support Ticket (RSVP issue)",
+      "method": "POST",
+      "url": "{{base_url}}/api/support",
+      "description": "Example ticket for a bug report.",
+      "headers": [
+        { "id": "h1", "name": "Authorization", "value": "Bearer {{token}}" },
+        { "id": "h2", "name": "Content-Type",  "value": "application/json" }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"subject\": \"RSVP button not responding\",\n  \"content\": \"The RSVP button on event ID 5 does not respond when clicked. Tested on Chrome and Safari. No errors in browser console. Account: bob@example.com.\"\n}"
+      },
+      "metaSortKey": -990
+    },
+
+    {
+      "_id": "req_my_tickets",
+      "_type": "request",
+      "parentId": "fld_support",
+      "name": "Get My Tickets",
+      "method": "GET",
+      "url": "{{base_url}}/api/support/my",
+      "description": "Get all support tickets submitted by the authenticated user.",
+      "headers": [
+        { "id": "h1", "name": "Authorization", "value": "Bearer {{token}}" }
+      ],
+      "body": {},
+      "metaSortKey": -980
+    },
+
+    {
+      "_id": "req_get_ticket",
+      "_type": "request",
+      "parentId": "fld_support",
+      "name": "Get Ticket by ID",
+      "method": "GET",
+      "url": "{{base_url}}/api/support/{{ticket_id}}",
+      "description": "Get a specific ticket. Users can only view their own; ADMIN can view any.",
+      "headers": [
+        { "id": "h1", "name": "Authorization", "value": "Bearer {{token}}" }
+      ],
+      "body": {},
+      "metaSortKey": -970
+    },
+
+    {
+      "_id": "req_get_all_tickets",
+      "_type": "request",
+      "parentId": "fld_support",
+      "name": "Get All Tickets (Admin only)",
+      "method": "GET",
+      "url": "{{base_url}}/api/support",
+      "description": "List all support tickets. Requires ADMIN role (set via DB, not registration).\nFilter by status: RESOLVED or UNRESOLVED.",
+      "headers": [
+        { "id": "h1", "name": "Authorization", "value": "Bearer {{token}}" }
+      ],
+      "parameters": [
+        { "id": "qp1", "name": "status", "value": "UNRESOLVED", "disabled": false }
+      ],
+      "body": {},
+      "metaSortKey": -960
+    },
+
+    {
+      "_id": "req_resolve_ticket",
+      "_type": "request",
+      "parentId": "fld_support",
+      "name": "Resolve Ticket (Admin only)",
+      "method": "PATCH",
+      "url": "{{base_url}}/api/support/{{ticket_id}}/status",
+      "description": "Set ticket status to RESOLVED. Requires ADMIN role.\nValid status values: RESOLVED, UNRESOLVED\nSets resolved_at timestamp automatically when resolving.",
+      "headers": [
+        { "id": "h1", "name": "Authorization", "value": "Bearer {{token}}" },
+        { "id": "h2", "name": "Content-Type",  "value": "application/json" }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"status\": \"RESOLVED\"\n}"
+      },
+      "metaSortKey": -950
+    },
+
+    {
+      "_id": "req_reopen_ticket",
+      "_type": "request",
+      "parentId": "fld_support",
+      "name": "Reopen Ticket (Admin only)",
+      "method": "PATCH",
+      "url": "{{base_url}}/api/support/{{ticket_id}}/status",
+      "description": "Reopen a resolved ticket. Requires ADMIN role.",
+      "headers": [
+        { "id": "h1", "name": "Authorization", "value": "Bearer {{token}}" },
+        { "id": "h2", "name": "Content-Type",  "value": "application/json" }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"status\": \"UNRESOLVED\"\n}"
+      },
+      "metaSortKey": -940
+    },
+
+    {
+      "_id": "req_get_categories",
+      "_type": "request",
+      "parentId": "fld_cats",
+      "name": "Get All Categories",
+      "method": "GET",
+      "url": "{{base_url}}/api/categories",
+      "description": "List all available category types. Use these values in event categoryTypes and user preferences.",
+      "headers": [
+        { "id": "h1", "name": "Authorization", "value": "Bearer {{token}}" }
+      ],
+      "body": {},
+      "metaSortKey": -1000
+    }
+
+  ]
+}

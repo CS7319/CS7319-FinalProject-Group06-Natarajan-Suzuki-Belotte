@@ -1,0 +1,224 @@
+package com.CS7319.Group06.eventual.eventservice.dao.impl;
+
+import com.CS7319.Group06.eventual.eventservice.dao.EventDao;
+import com.CS7319.Group06.eventual.eventservice.exception.DaoException;
+import com.CS7319.Group06.eventual.eventservice.model.Event;
+import com.CS7319.Group06.eventual.eventservice.model.constants.EventType;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.jdbc.CannotGetJdbcConnectionException;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowMapper;
+import org.springframework.stereotype.Component;
+
+import java.sql.Array;
+import java.sql.PreparedStatement;
+import java.sql.Types;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+/**
+ * JDBC implementation of EventDao
+ */
+@Component
+public class JdbcEventDao implements EventDao {
+
+    private final JdbcTemplate jdbcTemplate;
+
+    public JdbcEventDao(JdbcTemplate jdbcTemplate) {
+        this.jdbcTemplate = jdbcTemplate;
+    }
+
+    private final RowMapper<Event> eventRowMapper = (rs, rowNum) -> {
+        Event event = new Event();
+        event.setEventId(rs.getInt("id"));
+        event.setTitle(rs.getString("title"));
+        event.setDescription(rs.getString("description"));
+        event.setLocation(rs.getString("location"));
+        event.setStartDateTime(rs.getTimestamp("start_datetime").toLocalDateTime());
+        event.setEndDateTime(rs.getTimestamp("end_datetime").toLocalDateTime());
+        event.setOrganizerEmail(rs.getString("organizer_email"));
+        event.setOrganizerName(rs.getString("organizer_name"));
+        event.setCapacity(rs.getInt("capacity"));
+        int availableSpots = rs.getInt("available_spots");
+        event.setAvailableSpots(rs.wasNull() ? null : availableSpots);
+        event.setWaitlistCount(rs.getInt("waitlist_count"));
+        event.setModifiedBy(rs.getString("modified_by"));
+        event.setCreatedAt(rs.getTimestamp("created_at").toLocalDateTime());
+        event.setUpdatedAt(rs.getTimestamp("updated_at").toLocalDateTime());
+        event.setEventPicture(rs.getString("event_picture"));
+        event.setEventType(EventType.valueOf(rs.getString("event_type")));
+        int groupId = rs.getInt("group_id");
+        event.setGroupId(rs.wasNull() ? null : groupId);
+
+        Array categoryArray = rs.getArray("category_types");
+        if (categoryArray != null) {
+            String[] types = (String[]) categoryArray.getArray();
+            event.setCategoryTypes(new ArrayList<>(Arrays.asList(types)));
+        } else {
+            event.setCategoryTypes(new ArrayList<>());
+        }
+
+        return event;
+    };
+
+    @Override
+    public Event getEventById(int id) {
+        String sql = "SELECT e.id, e.title, e.description, e.location, e.start_datetime, e.end_datetime, " +
+                "e.organizer_email, u.name AS organizer_name, " +
+                "e.capacity, " +
+                     "CASE WHEN e.capacity = 0 THEN NULL " +
+                     "     ELSE GREATEST(0, e.capacity - (SELECT COUNT(*) FROM rsvp WHERE event_id = e.id AND status = 'GOING')) " +
+                     "END AS available_spots, " +
+                     "(SELECT COUNT(*) FROM rsvp WHERE event_id = e.id AND status = 'WAITLISTED') AS waitlist_count, " +
+                     "e.modified_by, e.created_at, e.updated_at, " +
+                     "e.event_picture, e.event_type, e.group_id, e.category_types " +
+                "FROM events e JOIN users u ON e.organizer_email = u.email " +
+                "WHERE e.id = ?";
+        try {
+            List<Event> results = jdbcTemplate.query(sql, eventRowMapper, id);
+            return results.isEmpty() ? null : results.getFirst();
+        } catch (CannotGetJdbcConnectionException e) {
+            throw new DaoException("Unable to connect to server or database", e);
+        }
+    }
+
+    @Override
+    public Event createEvent(Event event) {
+        String sql = "INSERT INTO events (title, description, location, start_datetime, end_datetime, organizer_email, " +
+                "capacity, event_picture, event_type, group_id, category_types) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id";
+        try {
+            Integer eventId = jdbcTemplate.execute((java.sql.Connection conn) -> {
+                PreparedStatement ps = conn.prepareStatement(sql);
+                ps.setString(1, event.getTitle());
+                ps.setString(2, event.getDescription());
+                ps.setString(3, event.getLocation());
+                ps.setObject(4, event.getStartDateTime());
+                ps.setObject(5, event.getEndDateTime());
+                ps.setString(6, event.getOrganizerEmail());
+                ps.setInt(7, event.getCapacity());
+                ps.setString(8, event.getEventPicture());
+                ps.setString(9, event.getEventType().name());
+                if (event.getGroupId() != null) {
+                    ps.setInt(10, event.getGroupId());
+                } else {
+                    ps.setNull(10, Types.INTEGER);
+                }
+                List<String> categoryTypes = event.getCategoryTypes();
+                ps.setArray(11, conn.createArrayOf("text",
+                        categoryTypes != null ? categoryTypes.toArray() : new String[0]));
+                var rs = ps.executeQuery();
+                return rs.next() ? rs.getInt(1) : null;
+            });
+            return getEventById(eventId);
+        } catch (CannotGetJdbcConnectionException e) {
+            throw new DaoException("Unable to connect to server or database", e);
+        } catch (DataIntegrityViolationException e) {
+            throw new DaoException("Data integrity violation", e);
+        }
+    }
+
+    @Override
+    public Event updateEvent(Event event) {
+        String sql = "UPDATE events SET " +
+                "title           = COALESCE(?, title), " +
+                "description     = COALESCE(?, description), " +
+                "location        = COALESCE(?, location), " +
+                "start_datetime  = COALESCE(?, start_datetime), " +
+                "end_datetime    = COALESCE(?, end_datetime), " +
+                "capacity        = COALESCE(?, capacity), " +
+                "event_picture   = COALESCE(?, event_picture), " +
+                "event_type      = COALESCE(?, event_type), " +
+                "group_id        = COALESCE(?, group_id), " +
+                "category_types  = COALESCE(?, category_types), " +
+                "modified_by     = ?, " +
+                "updated_at      = CURRENT_TIMESTAMP " +
+                "WHERE id = ?";
+        try {
+            int rowsAffected = jdbcTemplate.execute((java.sql.Connection conn) -> {
+                PreparedStatement ps = conn.prepareStatement(sql);
+                ps.setString(1, event.getTitle());
+                ps.setString(2, event.getDescription());
+                ps.setString(3, event.getLocation());
+                ps.setObject(4, event.getStartDateTime());
+                ps.setObject(5, event.getEndDateTime());
+                // capacity: 0 means "leave unchanged"
+                if (event.getCapacity() > 0) {
+                    ps.setInt(6, event.getCapacity());
+                } else {
+                    ps.setNull(6, Types.INTEGER);
+                }
+                ps.setString(7, event.getEventPicture());
+                ps.setString(8, event.getEventType() != null ? event.getEventType().name() : null);
+                if (event.getGroupId() != null) {
+                    ps.setInt(9, event.getGroupId());
+                } else {
+                    ps.setNull(9, Types.INTEGER);
+                }
+                List<String> categoryTypes = event.getCategoryTypes();
+                if (categoryTypes != null && !categoryTypes.isEmpty()) {
+                    ps.setArray(10, conn.createArrayOf("text", categoryTypes.toArray()));
+                } else {
+                    ps.setNull(10, Types.ARRAY);
+                }
+                ps.setString(11, event.getModifiedBy());
+                ps.setInt(12, event.getEventId());
+                return ps.executeUpdate();
+            });
+            if (rowsAffected == 0) {
+                throw new DaoException("Zero rows affected, expected at least one");
+            }
+            return getEventById(event.getEventId());
+        } catch (CannotGetJdbcConnectionException e) {
+            throw new DaoException("Unable to connect to server or database", e);
+        } catch (DataIntegrityViolationException e) {
+            throw new DaoException("Data integrity violation", e);
+        }
+    }
+
+    @Override
+    public int deleteEventById(int id) {
+        String sql = "DELETE FROM events WHERE id = ?";
+        try {
+            return jdbcTemplate.update(sql, id);
+        } catch (CannotGetJdbcConnectionException e) {
+            throw new DaoException("Unable to connect to server or database", e);
+        } catch (DataIntegrityViolationException e) {
+            throw new DaoException("Data integrity violation", e);
+        }
+    }
+
+    @Override
+    public List<Event> getEventsPaginated(int page, int size) {
+        // Note: no JOIN to users — organizer_name is not available cross-database.
+        // NULL is returned for organizer_name; the reindex flow only uses fields stored in events.
+        String sql = "SELECT e.id, e.title, e.description, e.location, e.start_datetime, e.end_datetime, " +
+                "e.organizer_email, NULL AS organizer_name, " +
+                "e.capacity, " +
+                "CASE WHEN e.capacity = 0 THEN NULL " +
+                "     ELSE GREATEST(0, e.capacity - (SELECT COUNT(*) FROM rsvp WHERE event_id = e.id AND status = 'GOING')) " +
+                "END AS available_spots, " +
+                "(SELECT COUNT(*) FROM rsvp WHERE event_id = e.id AND status = 'WAITLISTED') AS waitlist_count, " +
+                "e.modified_by, e.created_at, e.updated_at, " +
+                "e.event_picture, e.event_type, e.group_id, e.category_types " +
+                "FROM events e " +
+                "ORDER BY e.id " +
+                "LIMIT ? OFFSET ?";
+        try {
+            return jdbcTemplate.query(sql, eventRowMapper, size, (long) page * size);
+        } catch (CannotGetJdbcConnectionException e) {
+            throw new DaoException("Unable to connect to server or database", e);
+        }
+    }
+
+    @Override
+    public int countEvents() {
+        String sql = "SELECT COUNT(*) FROM events";
+        try {
+            Integer count = jdbcTemplate.queryForObject(sql, Integer.class);
+            return count != null ? count : 0;
+        } catch (CannotGetJdbcConnectionException e) {
+            throw new DaoException("Unable to connect to server or database", e);
+        }
+    }
+}

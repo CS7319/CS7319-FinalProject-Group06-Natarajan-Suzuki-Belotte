@@ -1,0 +1,23 @@
+package com.CS7319.Group06.eventual.service;
+
+import com.CS7319.Group06.eventual.model.search.ReindexStatus;
+
+/**
+ * Service for triggering and monitoring a full Elasticsearch reindex from PostgreSQL data.
+ */
+public interface ReindexService {
+
+    /**
+     * Start a full reindex of all events and groups.
+     * Returns immediately — the reindex runs in the background.
+     * Throws if a reindex is already in progress.
+     */
+    void startReindex();
+
+    /**
+     * Get the current reindex status.
+     *
+     * @return current status snapshot
+     */
+    ReindexStatus getStatus();
+}

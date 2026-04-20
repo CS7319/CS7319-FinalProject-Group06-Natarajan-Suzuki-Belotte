@@ -9,6 +9,9 @@ import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
 
+/**
+ * JwtUtil - utility class for jwt operations.
+ */
 @Component
 public class JwtUtil {
 
@@ -38,5 +41,15 @@ public class JwtUtil {
                 .parseSignedClaims(token)
                 .getPayload()
                 .getSubject();
+    }
+
+    public String extractRole(String token) {
+        Object role = Jwts.parser()
+                .verifyWith(getSigningKey())
+                .build()
+                .parseSignedClaims(token)
+                .getPayload()
+                .get("role");
+        return role != null ? role.toString() : "";
     }
 }
