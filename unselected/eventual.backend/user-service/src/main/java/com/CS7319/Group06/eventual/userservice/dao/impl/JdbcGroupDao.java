@@ -144,4 +144,29 @@ public class JdbcGroupDao implements GroupDao {
             throw new DaoException("Unable to connect to server or database", e);
         }
     }
+
+    @Override
+    public List<Group> getGroupsPaginated(int page, int size) {
+        String sql = "SELECT id, name, description, creator_email, owner_email, is_public, member_emails, " +
+                "modified_by, created_at, updated_at " +
+                "FROM groups " +
+                "ORDER BY id " +
+                "LIMIT ? OFFSET ?";
+        try {
+            return jdbcTemplate.query(sql, groupRowMapper, size, (long) page * size);
+        } catch (CannotGetJdbcConnectionException e) {
+            throw new DaoException("Unable to connect to server or database", e);
+        }
+    }
+
+    @Override
+    public int countGroups() {
+        String sql = "SELECT COUNT(*) FROM groups";
+        try {
+            Integer count = jdbcTemplate.queryForObject(sql, Integer.class);
+            return count != null ? count : 0;
+        } catch (CannotGetJdbcConnectionException e) {
+            throw new DaoException("Unable to connect to server or database", e);
+        }
+    }
 }

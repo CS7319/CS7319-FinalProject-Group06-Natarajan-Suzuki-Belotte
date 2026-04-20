@@ -5,6 +5,7 @@ import com.CS7319.Group06.eventual.userservice.model.GroupJoinRequest;
 import com.CS7319.Group06.eventual.userservice.model.GroupRequest;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * Service to manage groups
@@ -84,4 +85,20 @@ public interface GroupService {
      * @return
      */
     GroupJoinRequest rejectJoinRequest(int groupId, int requestId, String ownerEmail);
+
+    /**
+     * Get all groups paginated — used by the search-service reindex endpoint.
+     *
+     * @param page zero-based page number
+     * @param size page size
+     * @return list of groups
+     */
+    List<Group> getGroupsPaginated(int page, int size);
+
+    /**
+     * Count total number of groups.
+     *
+     * @return total count
+     */
+    int countGroups();
 }

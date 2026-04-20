@@ -224,6 +224,24 @@ public class GroupServiceImpl implements GroupService {
         }
     }
 
+    @Override
+    public List<Group> getGroupsPaginated(int page, int size) {
+        try {
+            return groupDao.getGroupsPaginated(page, size);
+        } catch (DaoException e) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
+        }
+    }
+
+    @Override
+    public int countGroups() {
+        try {
+            return groupDao.countGroups();
+        } catch (DaoException e) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
+        }
+    }
+
     // -------------------------------------------------------------------------
     // Private helpers
     // -------------------------------------------------------------------------

@@ -195,6 +195,24 @@ public class EventServiceImpl implements EventService {
         kafkaProducer.publishEventDeleted(new EventDeletedMessage(id, existing.getTitle(), rsvpedEmails));
     }
 
+    @Override
+    public List<Event> getEventsPaginated(int page, int size) {
+        try {
+            return eventDao.getEventsPaginated(page, size);
+        } catch (DaoException e) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
+        }
+    }
+
+    @Override
+    public int countEvents() {
+        try {
+            return eventDao.countEvents();
+        } catch (DaoException e) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
+        }
+    }
+
     private String storeEventPicture(String organizerEmail, MultipartFile file) {
         String contentType = file.getContentType();
         if (contentType == null || !contentType.startsWith("image/")) {

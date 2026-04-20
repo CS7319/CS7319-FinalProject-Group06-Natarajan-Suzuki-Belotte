@@ -3,6 +3,8 @@ package com.CS7319.Group06.eventual.eventservice.service;
 import com.CS7319.Group06.eventual.eventservice.model.Event;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
+
 /**
  * Service interface for event operations
  */
@@ -44,4 +46,20 @@ public interface EventService {
      * @param organizerEmail
      */
     void deleteEvent(int id, String organizerEmail);
+
+    /**
+     * Get all events paginated — used by the search-service reindex endpoint.
+     *
+     * @param page zero-based page number
+     * @param size page size
+     * @return list of events
+     */
+    List<Event> getEventsPaginated(int page, int size);
+
+    /**
+     * Count total number of events.
+     *
+     * @return total count
+     */
+    int countEvents();
 }

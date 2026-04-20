@@ -193,6 +193,54 @@ Ollama's port is not published to the host, so it won't conflict if you also hav
 
 ---
 
+### Populating Elasticsearch (Reindex)
+
+After starting the app and loading the PostgreSQL schema, Elasticsearch will be empty. Any events and groups already in the database need to be ingested manually.
+
+#### Trigger the reindex
+
+```
+POST http://localhost:8080/api/search/reindex
+Authorization: Bearer <your-token>
+```
+
+The endpoint returns **202 Accepted** immediately and runs in the background. Poll for progress:
+
+```
+GET http://localhost:8080/api/search/reindex/status
+Authorization: Bearer <your-token>
+```
+
+**Example status response:**
+
+```json
+{
+  "state": "RUNNING",
+  "eventsIndexed": 42,
+  "groupsIndexed": 8,
+  "eventsFailed": 0,
+  "groupsFailed": 0,
+  "totalEvents": 150,
+  "totalGroups": 20,
+  "startedAt": "2025-04-18T10:30:00",
+  "completedAt": null,
+  "error": null
+}
+```
+
+| State | Meaning |
+|-------|---------|
+| `IDLE` | No reindex has been run yet |
+| `RUNNING` | Reindex is in progress |
+| `COMPLETED` | All records indexed successfully |
+| `FAILED` | An unrecoverable error occurred (`error` field has details) |
+
+> **Note:** If Ollama is unavailable, indexing still proceeds — records are stored with lexical fields only, without a semantic embedding vector. Search falls back to keyword-only results.
+
+> **Note:** Only one reindex can run at a time. A second `POST` while one is running returns `409 Conflict`.
+
+---
+
 ### Optional — Kibana (Inspect Elasticsearch Indices)
 
 Kibana is included but disabled by default. Start it with:
@@ -391,6 +439,54 @@ Pull the embedding model once after the first startup:
 ```bash
 docker exec eventual-ollama ollama pull nomic-embed-text
 ```
+
+---
+
+### Populating Elasticsearch (Reindex)
+
+After starting the services and loading the PostgreSQL schemas, Elasticsearch will be empty. Any events and groups already in the database need to be ingested manually.
+
+#### Trigger the reindex
+
+```
+POST http://localhost:8080/api/search/reindex
+Authorization: Bearer <your-token>
+```
+
+The endpoint returns **202 Accepted** immediately and runs in the background. Poll for progress:
+
+```
+GET http://localhost:8080/api/search/reindex/status
+Authorization: Bearer <your-token>
+```
+
+**Example status response:**
+
+```json
+{
+  "state": "RUNNING",
+  "eventsIndexed": 42,
+  "groupsIndexed": 8,
+  "eventsFailed": 0,
+  "groupsFailed": 0,
+  "totalEvents": 150,
+  "totalGroups": 20,
+  "startedAt": "2025-04-18T10:30:00",
+  "completedAt": null,
+  "error": null
+}
+```
+
+| State | Meaning |
+|-------|---------|
+| `IDLE` | No reindex has been run yet |
+| `RUNNING` | Reindex is in progress |
+| `COMPLETED` | All records indexed successfully |
+| `FAILED` | An unrecoverable error occurred (`error` field has details) |
+
+> **Note:** The reindex calls Ollama to generate semantic embeddings for each record. If Ollama is unavailable, indexing still proceeds — records are stored in Elasticsearch with lexical fields only, without a semantic embedding vector. Search will fall back to keyword-only results.
+
+> **Note:** Only one reindex can run at a time. A second `POST` while one is in progress returns `409 Conflict`.
 
 ---
 

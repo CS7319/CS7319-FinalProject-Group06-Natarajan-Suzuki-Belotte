@@ -3,9 +3,14 @@ package com.CS7319.Group06.eventual.eventservice.controller;
 import com.CS7319.Group06.eventual.eventservice.model.Event;
 import com.CS7319.Group06.eventual.eventservice.service.EventService;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
+
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 import static org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE;
 
@@ -25,6 +30,25 @@ public class EventController {
     @GetMapping("/{id}")
     public Event getEventById(@PathVariable int id) {
         return eventService.getEventById(id);
+    }
+
+    /**
+     * Paginated list of all events — used internally by search-service for Elasticsearch reindexing.
+     * Not intended for end-user consumption.
+     */
+    @GetMapping("/all")
+    public ResponseEntity<Map<String, Object>> getAllEvents(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "100") int size) {
+        size = Math.min(size, 500);
+        List<Event> events = eventService.getEventsPaginated(page, size);
+        int total = eventService.countEvents();
+        Map<String, Object> response = new LinkedHashMap<>();
+        response.put("events", events);
+        response.put("total", total);
+        response.put("page", page);
+        response.put("size", size);
+        return ResponseEntity.ok(response);
     }
 
     @ResponseStatus(HttpStatus.CREATED)

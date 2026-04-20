@@ -10,7 +10,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Manages group operations — create, edit, join, and join request approvals
@@ -23,6 +25,25 @@ public class GroupController {
 
     public GroupController(GroupService groupService) {
         this.groupService = groupService;
+    }
+
+    /**
+     * Paginated list of all groups — used internally by search-service for Elasticsearch reindexing.
+     * Not intended for end-user consumption.
+     */
+    @GetMapping("/all")
+    public ResponseEntity<Map<String, Object>> getAllGroups(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "100") int size) {
+        size = Math.min(size, 500);
+        List<Group> groups = groupService.getGroupsPaginated(page, size);
+        int total = groupService.countGroups();
+        Map<String, Object> response = new LinkedHashMap<>();
+        response.put("groups", groups);
+        response.put("total", total);
+        response.put("page", page);
+        response.put("size", size);
+        return ResponseEntity.ok(response);
     }
 
     @ResponseStatus(HttpStatus.CREATED)

@@ -2,6 +2,8 @@ package com.CS7319.Group06.eventual.userservice.dao;
 
 import com.CS7319.Group06.eventual.userservice.model.Group;
 
+import java.util.List;
+
 /**
  * Data layer for groups
  */
@@ -39,4 +41,20 @@ public interface GroupDao {
      * @return
      */
     Group addMember(int groupId, String memberEmail);
+
+    /**
+     * Get all groups paginated — used by the search-service reindex endpoint.
+     *
+     * @param page zero-based page number
+     * @param size page size
+     * @return list of groups
+     */
+    List<Group> getGroupsPaginated(int page, int size);
+
+    /**
+     * Count total number of groups.
+     *
+     * @return total count
+     */
+    int countGroups();
 }

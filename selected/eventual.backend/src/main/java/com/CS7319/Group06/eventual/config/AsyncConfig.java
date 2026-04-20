@@ -35,4 +35,19 @@ public class AsyncConfig {
         executor.initialize();
         return executor;
     }
+
+    /**
+     * Single-threaded executor for reindex jobs — ensures only one reindex runs at a time
+     * and progress is tracked accurately.
+     */
+    @Bean(name = "reindexExecutor")
+    public Executor reindexExecutor() {
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        executor.setCorePoolSize(1);
+        executor.setMaxPoolSize(1);
+        executor.setQueueCapacity(1);
+        executor.setThreadNamePrefix("reindex-");
+        executor.initialize();
+        return executor;
+    }
 }

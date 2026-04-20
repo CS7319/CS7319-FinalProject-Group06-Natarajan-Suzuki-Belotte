@@ -187,4 +187,38 @@ public class JdbcEventDao implements EventDao {
             throw new DaoException("Data integrity violation", e);
         }
     }
+
+    @Override
+    public List<Event> getEventsPaginated(int page, int size) {
+        // Note: no JOIN to users — organizer_name is not available cross-database.
+        // NULL is returned for organizer_name; the reindex flow only uses fields stored in events.
+        String sql = "SELECT e.id, e.title, e.description, e.location, e.start_datetime, e.end_datetime, " +
+                "e.organizer_email, NULL AS organizer_name, " +
+                "e.capacity, " +
+                "CASE WHEN e.capacity = 0 THEN NULL " +
+                "     ELSE GREATEST(0, e.capacity - (SELECT COUNT(*) FROM rsvp WHERE event_id = e.id AND status = 'GOING')) " +
+                "END AS available_spots, " +
+                "(SELECT COUNT(*) FROM rsvp WHERE event_id = e.id AND status = 'WAITLISTED') AS waitlist_count, " +
+                "e.modified_by, e.created_at, e.updated_at, " +
+                "e.event_picture, e.event_type, e.group_id, e.category_types " +
+                "FROM events e " +
+                "ORDER BY e.id " +
+                "LIMIT ? OFFSET ?";
+        try {
+            return jdbcTemplate.query(sql, eventRowMapper, size, (long) page * size);
+        } catch (CannotGetJdbcConnectionException e) {
+            throw new DaoException("Unable to connect to server or database", e);
+        }
+    }
+
+    @Override
+    public int countEvents() {
+        String sql = "SELECT COUNT(*) FROM events";
+        try {
+            Integer count = jdbcTemplate.queryForObject(sql, Integer.class);
+            return count != null ? count : 0;
+        } catch (CannotGetJdbcConnectionException e) {
+            throw new DaoException("Unable to connect to server or database", e);
+        }
+    }
 }
