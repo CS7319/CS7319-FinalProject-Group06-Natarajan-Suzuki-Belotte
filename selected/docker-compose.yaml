@@ -74,7 +74,7 @@ services:
         soft: -1
         hard: -1
     volumes:
-      - es-data01:/usr/share/elasticsearch/data
+      - ./docker/es-data01:/usr/share/elasticsearch/data
     healthcheck:
       test:
         [
@@ -106,7 +106,7 @@ services:
         soft: -1
         hard: -1
     volumes:
-      - es-data02:/usr/share/elasticsearch/data
+      - ./docker/es-data02:/usr/share/elasticsearch/data
     networks:
       - eventual-net
 
@@ -128,7 +128,7 @@ services:
         soft: -1
         hard: -1
     volumes:
-      - es-data03:/usr/share/elasticsearch/data
+      - ./docker/es-data03:/usr/share/elasticsearch/data
     networks:
       - eventual-net
 
