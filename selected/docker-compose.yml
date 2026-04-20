@@ -137,6 +137,9 @@ services:
       - kibana
 
 volumes:
+  es-data01:
+  es-data02:
+  es-data03:
   ollama-data:
   uploads-data:
 

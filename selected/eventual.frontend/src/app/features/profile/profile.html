@@ -1,11 +1,114 @@
 <section class="mt-3">
   <div class="container">
-    <h2 class="title">Profile</h2>
-  </div>
+    <div class="columns">
+      <aside class="column is-one-quarter">
+        <figure class="image">
+          <img class="is-rounded" src="https://bulma.io/assets/images/placeholders/256x256.png" />
+        </figure>
 
-  @if (userInfo) {
-    <div>
-      <p>First Name: {{ userInfo.name }}</p>
+        <div class="has-text-centered my-5">
+          <p class="title is-3">Name</p>
+          <p class="subtitle is-5">Location</p>
+        </div>
+
+        <nav class="level my-5">
+          <div class="level-item has-text-centered">
+            <div>
+              <p class="heading">Events</p>
+              <p class="title">3,456</p>
+            </div>
+          </div>
+          <div class="level-item has-text-centered">
+            <div>
+              <p class="heading">Groups</p>
+              <p class="title">123</p>
+            </div>
+          </div>
+          <div class="level-item has-text-centered">
+            <div>
+              <p class="heading">Interests</p>
+              <p class="title">456K</p>
+            </div>
+          </div>
+        </nav>
+
+        <textarea class="textarea" placeholder="About Me"></textarea>
+      </aside>
+
+      <div class="column">
+        <div class="section box">
+          <header class="title">Events</header>
+
+          <nav class="level my-5">
+            <div class="level-item has-text-centered">
+              <div>
+                <p class="heading">Event 1</p>
+                <p class="subttitle">title</p>
+              </div>
+            </div>
+            <div class="level-item has-text-centered">
+              <div>
+                <p class="heading">Event 2</p>
+                <p class="subttitle">title</p>
+              </div>
+            </div>
+            <div class="level-item has-text-centered">
+              <div>
+                <p class="heading">New Event</p>
+                <p class="subttitle">create event</p>
+              </div>
+            </div>
+          </nav>
+        </div>
+        <div class="section box">
+          <header class="title">Groups</header>
+
+          <nav class="level my-5">
+            <div class="level-item has-text-centered">
+              <div>
+                <p class="heading">Group 1</p>
+                <p class="subttitle">title</p>
+              </div>
+            </div>
+            <div class="level-item has-text-centered">
+              <div>
+                <p class="heading">Group 2</p>
+                <p class="subttitle">title</p>
+              </div>
+            </div>
+            <div class="level-item has-text-centered">
+              <div>
+                <p class="heading">New Group</p>
+                <p class="subttitle">create group</p>
+              </div>
+            </div>
+          </nav>
+        </div>
+        <div class="section box">
+          <header class="title">Interests</header>
+
+          <nav class="level my-5">
+            <div class="level-item has-text-centered">
+              <div>
+                <p class="heading">Interest 1</p>
+                <p class="subttitle">title</p>
+              </div>
+            </div>
+            <div class="level-item has-text-centered">
+              <div>
+                <p class="heading">Interest 2</p>
+                <p class="subttitle">title</p>
+              </div>
+            </div>
+            <div class="level-item has-text-centered">
+              <div>
+                <p class="heading">New Interest</p>
+                <p class="subttitle">add interest</p>
+              </div>
+            </div>
+          </nav>
+        </div>
+      </div>
     </div>
-  }
+  </div>
 </section>
