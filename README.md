@@ -1,6 +1,6 @@
 # Eventual — Event Management Platform
 
-**CS7319 Final Project — Group 06**  
+**CS7319 Final Project — Group 06**
 Harini Natarajan · Zachary Suzuki · Fred Belotte
 
 ---
@@ -9,10 +9,10 @@ Harini Natarajan · Zachary Suzuki · Fred Belotte
 
 Eventual is a full-featured event management platform built and evaluated under two architectural styles:
 
-| Directory | Architecture | Description |
-|-----------|-------------|-------------|
-| `selected/` | **Layered (N-Tier)** | Single Spring Boot monolith with one shared PostgreSQL database (`eventual`), Elasticsearch (hybrid search), and Ollama (semantic embeddings) |
-| `unselected/` | **Microservices** | API Gateway + six independent services (User, Event, Search, Notification, Vendor, Support), each with its own PostgreSQL database, communicating via REST and Kafka |
+| Directory     | Architecture         | Description                                                                                                                                                          |
+| ------------- | -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `selected/`   | **Layered (N-Tier)** | Single Spring Boot monolith with one shared PostgreSQL database (`eventual`), Elasticsearch (hybrid search), and Ollama (semantic embeddings)                        |
+| `unselected/` | **Microservices**    | API Gateway + six independent services (User, Event, Search, Notification, Vendor, Support), each with its own PostgreSQL database, communicating via REST and Kafka |
 
 ---
 
@@ -20,34 +20,13 @@ Eventual is a full-featured event management platform built and evaluated under 
 
 ### Prerequisites
 
-| Tool | Version | Notes |
-|------|---------|-------|
-| Docker Desktop | 4.x or later | Runs Elasticsearch, Ollama, and the app |
-| Docker Compose | v2 (bundled with Docker Desktop) | |
-| PostgreSQL | 14+ | Must be running **locally on your machine** |
+| Tool           | Version                          | Notes                                          |
+| -------------- | -------------------------------- | ---------------------------------------------- |
+| Docker Desktop | 4.x or later                     | Runs Elasticsearch, Ollama, and the app        |
+| Docker Compose | v2 (bundled with Docker Desktop) |                                                |
+| Insomnia       | v12 or later                     | Recommended to interface with the API directly |
 
 > No local JDK or Maven installation is required — the app builds and runs inside Docker.
-
-#### Local PostgreSQL setup
-
-The selected architecture uses a **single database** (`eventual`) shared by all layers of the monolith.
-
-```bash
-# 1. Connect to PostgreSQL as the superuser
-psql -U postgres -d postgres
-
-# 2. Create the database (run inside the psql prompt, then exit)
-CREATE DATABASE eventual;
-\q
-
-# 3. Load the schema DDL
-psql -U postgres -d eventual -f selected/eventual.database/schema.sql
-
-# 4. (Optional) Load seed data
-psql -U postgres -d eventual -f selected/eventual.database/db_dml.sql
-```
-
-The app container connects to your local PostgreSQL via `host.docker.internal:5432` (Docker's built-in hostname that resolves to your host machine).
 
 ---
 
@@ -64,8 +43,11 @@ docker compose up --build
 #    You will see: "Started EventualApplication in X seconds"
 
 # 4. The API is now available at
-#    http://localhost:8080
-#    Swagger UI: http://localhost:8080/swagger-ui/index.html
+#    http://localhost:4201
+#    Swagger UI: http://localhost:4201/swagger-ui/index.html
+
+# 5. The UI is now available at
+#    http://localhost:4200
 ```
 
 To stop everything:
@@ -77,10 +59,26 @@ docker compose down
 To stop and wipe all persisted data (volumes):
 
 ```bash
-docker compose down -v
+docker compose down --volumes
 ```
 
 ---
+
+### User Interface
+
+### Step 1 - Sign Up/Register User
+
+1. Navigate to http://localhost:4200/
+2. Click the SignUp button on the navigation bar.
+3. Enter Name, Email and Password (must be at least 8 characters long) and Click Sign Up at the bottom of the modal.
+   1. If the registration is invalid, the error will be listed in the browser console.
+   2. If the registration is valid, there will be no error listed.
+4. Upon registering the user, you can now login.
+5. Click the Log In button on the navigation bar.
+6. Enter Email and Password as entered in the Sign Up above.
+   1. If the Log In is unsuccesful, an error will be listed in the browser console.
+7. The navigation bar will change to Profile and Log Out in place of Sign Up and Log in.
+8. The Authentication Workflow is discussed in the next section.
 
 ### Authentication — JWT
 
@@ -127,12 +125,12 @@ Add an `Authorization` header to every request:
 Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ```
 
-| Client | Where to set it |
-|--------|----------------|
-| Insomnia | Request → **Auth** tab → **Bearer Token** → paste the token |
-| Postman | Request → **Authorization** tab → Type: **Bearer Token** → paste the token |
-| curl | `-H "Authorization: Bearer <token>"` |
-| Swagger UI | Click **Authorize** (🔒) at the top → enter `Bearer <token>` |
+| Client     | Where to set it                                                            |
+| ---------- | -------------------------------------------------------------------------- |
+| Insomnia   | Request → **Auth** tab → **Bearer Token** → paste the token                |
+| Postman    | Request → **Authorization** tab → Type: **Bearer Token** → paste the token |
+| curl       | `-H "Authorization: Bearer <token>"`                                       |
+| Swagger UI | Click **Authorize** (🔒) at the top → enter `Bearer <token>`               |
 
 > **Using the provided collections**: The Postman collection (`eventual_selected.postman.json`) automatically saves the token from the login response to a collection variable and attaches it to all subsequent requests. In Insomnia, set the `token` environment variable after logging in.
 
@@ -140,15 +138,14 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 
 ### Service Ports
 
-| Service | Port | URL | Runs in |
-|---------|------|-----|---------|
-| Spring Boot App | 8080 | http://localhost:8080 | Docker |
-| PostgreSQL | 5432 | `jdbc:postgresql://localhost:5432/eventual` | **Local** |
-| Elasticsearch (es01) | — | internal only | Docker |
-| Elasticsearch (es02) | — | internal only | Docker |
-| Elasticsearch (es03) | — | internal only | Docker |
-| Ollama | — | internal only | Docker |
-| Kibana *(optional)* | 5601 | http://localhost:5601 | Docker |
+| Service              | Port | URL                   | Runs in |
+| -------------------- | ---- | --------------------- | ------- |
+| Spring Boot App      | 4201 | http://localhost:4201 | Docker  |
+| Elasticsearch (es01) | —    | internal only         | Docker  |
+| Elasticsearch (es02) | —    | internal only         | Docker  |
+| Elasticsearch (es03) | —    | internal only         | Docker  |
+| Ollama               | —    | internal only         | Docker  |
+| Kibana _(optional)_  | 5601 | http://localhost:5601 | Docker  |
 
 ---
 
@@ -159,18 +156,18 @@ PostgreSQL runs on your local machine. Connect using your normal local credentia
 #### psql (command line)
 
 ```bash
-psql -h localhost -p 5432 -U postgres -d eventual
+psql -h localhost -p 5432 -U postgres -d eventualdb
 ```
 
 #### pgAdmin / DBeaver / TablePlus
 
-| Field | Value |
-|-------|-------|
-| Host | `localhost` |
-| Port | `5432` |
-| Database | `eventual` |
-| Username | `postgres` |
-| Password | `postgres1` *(or your local password)* |
+| Field    | Value        |
+| -------- | ------------ |
+| Host     | `localhost`  |
+| Port     | `5432`       |
+| Database | `eventualdb` |
+| Username | `postgres`   |
+| Password | `postgres1`  |
 
 ---
 
@@ -228,12 +225,12 @@ Authorization: Bearer <your-token>
 }
 ```
 
-| State | Meaning |
-|-------|---------|
-| `IDLE` | No reindex has been run yet |
-| `RUNNING` | Reindex is in progress |
-| `COMPLETED` | All records indexed successfully |
-| `FAILED` | An unrecoverable error occurred (`error` field has details) |
+| State       | Meaning                                                     |
+| ----------- | ----------------------------------------------------------- |
+| `IDLE`      | No reindex has been run yet                                 |
+| `RUNNING`   | Reindex is in progress                                      |
+| `COMPLETED` | All records indexed successfully                            |
+| `FAILED`    | An unrecoverable error occurred (`error` field has details) |
 
 > **Note:** If Ollama is unavailable, indexing still proceeds — records are stored with lexical fields only, without a semantic embedding vector. Search falls back to keyword-only results.
 
@@ -262,11 +259,11 @@ GET /events/_search
 
 ### Prerequisites
 
-| Tool | Version | Notes |
-|------|---------|-------|
-| Docker Desktop | 4.x or later | Runs all services and infrastructure |
-| Docker Compose | v2 (bundled with Docker Desktop) | |
-| PostgreSQL | 14+ | Must be running **locally on your machine** |
+| Tool           | Version                          | Notes                                       |
+| -------------- | -------------------------------- | ------------------------------------------- |
+| Docker Desktop | 4.x or later                     | Runs all services and infrastructure        |
+| Docker Compose | v2 (bundled with Docker Desktop) |                                             |
+| PostgreSQL     | 14+                              | Must be running **locally on your machine** |
 
 #### Local PostgreSQL setup
 
@@ -290,13 +287,13 @@ psql -U postgres -d eventual_vendors      -f unselected/eventual.database/vendor
 psql -U postgres -d eventual_support      -f unselected/eventual.database/support-service.sql
 ```
 
-| Database | Owned by | Tables |
-|----------|----------|--------|
-| `eventual_users` | user-service | `users`, `categories`, `groups`, `group_join_requests` |
-| `eventual_events` | event-service | `events`, `rsvp` |
-| `eventual_notifications` | notification-service | `notifications` |
-| `eventual_vendors` | vendor-service | `vendors`, `vendor_reviews`, `event_vendors` |
-| `eventual_support` | support-service | `support_tickets` |
+| Database                 | Owned by             | Tables                                                 |
+| ------------------------ | -------------------- | ------------------------------------------------------ |
+| `eventual_users`         | user-service         | `users`, `categories`, `groups`, `group_join_requests` |
+| `eventual_events`        | event-service        | `events`, `rsvp`                                       |
+| `eventual_notifications` | notification-service | `notifications`                                        |
+| `eventual_vendors`       | vendor-service       | `vendors`, `vendor_reviews`, `event_vendors`           |
+| `eventual_support`       | support-service      | `support_tickets`                                      |
 
 > Cross-service references (e.g. an event's `organizer_email`, a ticket's `submitted_by`) are stored as plain `varchar` columns — there are **no foreign keys across databases**. Consistency is enforced at the application layer.
 
@@ -381,22 +378,22 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 
 ### Services
 
-| Service | Container | Port | Responsibility | Runs in |
-|---------|-----------|------|---------------|---------|
-| API Gateway | `eventual-api-gateway` | 8080 | JWT validation, request routing | Docker |
-| User Service | `eventual-user-service` | 8082 | Users, groups, join requests, authentication | Docker |
-| Event Service | `eventual-event-service` | 8081 | Events, RSVPs | Docker |
-| Search Service | `eventual-search-service` | 8084 | Elasticsearch indexing, hybrid search, recommendations | Docker |
-| Notification Service | `eventual-notification-service` | 8083 | In-app notifications via Kafka | Docker |
-| Vendor Service | `eventual-vendor-service` | 8085 | Vendors, vendor reviews, event–vendor assignments | Docker |
-| Support Service | `eventual-support-service` | 8086 | Support tickets | Docker |
-| Kafka | `eventual-kafka` | 9092 | Async messaging (KRaft mode) | Docker |
-| Elasticsearch (es01) | `eventual-es01` | 9200 | Search index — node 1 (exposed) | Docker |
-| Elasticsearch (es02) | `eventual-es02` | — | Search index — node 2 (internal) | Docker |
-| Elasticsearch (es03) | `eventual-es03` | — | Search index — node 3 (internal) | Docker |
-| Ollama | `eventual-ollama` | 11434 | Semantic embeddings | Docker |
-| PostgreSQL | — | 5432 | Persistent data store | **Local** |
-| Kibana *(optional)* | `eventual-kibana` | 5601 | Elasticsearch UI | Docker |
+| Service              | Container                       | Port  | Responsibility                                         | Runs in   |
+| -------------------- | ------------------------------- | ----- | ------------------------------------------------------ | --------- |
+| API Gateway          | `eventual-api-gateway`          | 8080  | JWT validation, request routing                        | Docker    |
+| User Service         | `eventual-user-service`         | 8082  | Users, groups, join requests, authentication           | Docker    |
+| Event Service        | `eventual-event-service`        | 8081  | Events, RSVPs                                          | Docker    |
+| Search Service       | `eventual-search-service`       | 8084  | Elasticsearch indexing, hybrid search, recommendations | Docker    |
+| Notification Service | `eventual-notification-service` | 8083  | In-app notifications via Kafka                         | Docker    |
+| Vendor Service       | `eventual-vendor-service`       | 8085  | Vendors, vendor reviews, event–vendor assignments      | Docker    |
+| Support Service      | `eventual-support-service`      | 8086  | Support tickets                                        | Docker    |
+| Kafka                | `eventual-kafka`                | 9092  | Async messaging (KRaft mode)                           | Docker    |
+| Elasticsearch (es01) | `eventual-es01`                 | 9200  | Search index — node 1 (exposed)                        | Docker    |
+| Elasticsearch (es02) | `eventual-es02`                 | —     | Search index — node 2 (internal)                       | Docker    |
+| Elasticsearch (es03) | `eventual-es03`                 | —     | Search index — node 3 (internal)                       | Docker    |
+| Ollama               | `eventual-ollama`               | 11434 | Semantic embeddings                                    | Docker    |
+| PostgreSQL           | —                               | 5432  | Persistent data store                                  | **Local** |
+| Kibana _(optional)_  | `eventual-kibana`               | 5601  | Elasticsearch UI                                       | Docker    |
 
 ---
 
@@ -408,18 +405,18 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 
 #### Kafka Topics
 
-| Topic | Published by | Consumed by | Trigger |
-|-------|-------------|-------------|---------|
-| `event-created` | event-service | notification-service, search-service | New event created |
-| `event-updated` | event-service | notification-service, search-service | Event details changed |
-| `event-deleted` | event-service | notification-service, search-service | Event removed |
-| `rsvp-created` | event-service | notification-service | User RSVPs to an event |
-| `rsvp-cancelled` | event-service | notification-service | User cancels their RSVP |
-| `group-indexed` | user-service | search-service | New group created or updated |
-| `group-deleted` | user-service | search-service | Group removed |
-| `join-request-submitted` | user-service | notification-service | User requests to join a group |
-| `join-request-approved` | user-service | notification-service | Organizer approves join request |
-| `join-request-rejected` | user-service | notification-service | Organizer rejects join request |
+| Topic                    | Published by  | Consumed by                          | Trigger                         |
+| ------------------------ | ------------- | ------------------------------------ | ------------------------------- |
+| `event-created`          | event-service | notification-service, search-service | New event created               |
+| `event-updated`          | event-service | notification-service, search-service | Event details changed           |
+| `event-deleted`          | event-service | notification-service, search-service | Event removed                   |
+| `rsvp-created`           | event-service | notification-service                 | User RSVPs to an event          |
+| `rsvp-cancelled`         | event-service | notification-service                 | User cancels their RSVP         |
+| `group-indexed`          | user-service  | search-service                       | New group created or updated    |
+| `group-deleted`          | user-service  | search-service                       | Group removed                   |
+| `join-request-submitted` | user-service  | notification-service                 | User requests to join a group   |
+| `join-request-approved`  | user-service  | notification-service                 | Organizer approves join request |
+| `join-request-rejected`  | user-service  | notification-service                 | Organizer rejects join request  |
 
 Topic names can be overridden via environment variables in `docker-compose.yml`:
 
@@ -477,12 +474,12 @@ Authorization: Bearer <your-token>
 }
 ```
 
-| State | Meaning |
-|-------|---------|
-| `IDLE` | No reindex has been run yet |
-| `RUNNING` | Reindex is in progress |
-| `COMPLETED` | All records indexed successfully |
-| `FAILED` | An unrecoverable error occurred (`error` field has details) |
+| State       | Meaning                                                     |
+| ----------- | ----------------------------------------------------------- |
+| `IDLE`      | No reindex has been run yet                                 |
+| `RUNNING`   | Reindex is in progress                                      |
+| `COMPLETED` | All records indexed successfully                            |
+| `FAILED`    | An unrecoverable error occurred (`error` field has details) |
 
 > **Note:** The reindex calls Ollama to generate semantic embeddings for each record. If Ollama is unavailable, indexing still proceeds — records are stored in Elasticsearch with lexical fields only, without a semantic embedding vector. Search will fall back to keyword-only results.
 
@@ -559,14 +556,24 @@ CS7319-FinalProject-Group06-Natarajan-Suzuki-Belotte/
 
 ## Technology Stack
 
-| Layer | Technology |
-|-------|-----------|
-| Language | Java 23 |
-| Framework | Spring Boot 3.4.4 |
-| Database | PostgreSQL 16 |
-| Search | Elasticsearch 8.13.4 |
-| Embeddings | Ollama + nomic-embed-text |
-| Messaging | Apache Kafka |
-| Auth | JWT (jjwt 0.12.6) |
-| Build | Maven 3.9 |
-| Container | Docker + Docker Compose |
+| Layer          | Technology                     |
+| -------------- | ------------------------------ |
+| User Interface | Angular 21                     |
+| CSS Library    | Bulma 1.x, Angular Material 21 |
+| Language       | Java 25                        |
+| Framework      | Spring Boot 3.4.4              |
+| Database       | PostgreSQL 17                  |
+| Search         | Elasticsearch 8.13.4           |
+| Embeddings     | Ollama + nomic-embed-text      |
+| Messaging      | Apache Kafka                   |
+| Auth           | JWT (jjwt 0.12.6)              |
+| Build          | Maven 3.9                      |
+| Container      | Docker + Docker Compose        |
+
+## Rationale for our Selection
+
+As we have discussed in our presentation, we have chosen the Layered Architecture Style for our project. It is a monolith-like structure composed of distinct layers namely presentation, business logic/domain, and data access layers. Each layer stacks on top of the prior layer defining its responsibility and interaction interface. With this approach we gain separation of concerns. In a Micro-Service Architecture Style, rather than thinking horizontally, the structure is flipped vertically and each domain class becomes it own self-contained modular monolith or service. This structure necessitate the need for a network-oriented approach to operate. Operational complexity is likely the main differentiator between these 2 architectures.
+
+Layered Architecture is relatively simple to design and implement because it is built around the concept of a single deployment unit. In contrast, Microservices Architecture is highly modular, providing the flexibility to build a system incrementally, one service at a time. However, this flexibility introduces its own set of challenges, particularly those associated with the distributed nature of the architecture, such as increased complexity in service discovery, interaction, and deployment.
+The rationale for selecting a Layered Architecture for our project was primarily based on the initial complexity of the features we intended to implement. By focusing on these features, we were able to develop the core functionality of the application. Additionally, this approach allowed us to run the application locally, troubleshoot implementation issues, and iterate during development.
+In summary, the practicality of Layered Architecture outweighed the benefits of scalability, flexibility, and independent deployment offered by Microservices Architecture for this particular project.
