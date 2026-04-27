@@ -9,8 +9,8 @@
       "_id": "wrk_eventual",
       "_type": "workspace",
       "parentId": null,
-      "name": "Eventual — Layered Architecture",
-      "description": "REST API collection for the Eventual monolith (N-Tier / Layered architecture) running on port 8080.\n\n--- GETTING STARTED ---\n1. Run the app: cd selected && docker compose up --build\n2. Create DB: psql -U postgres -c 'CREATE DATABASE eventual;'\n3. Run schema: psql -U postgres -d eventual -f selected/eventual.database/schema.sql\n4. Register via POST /api/users/register\n5. Login via POST /api/users/login — copy the 'token' from the response\n6. Open Manage Environments → paste token into the 'token' variable\n\n--- ROLES ---\nORGANIZER  — can create/update events, groups, vendors\nPARTICIPANT — can RSVP, join groups, post reviews\nADMIN       — cannot register via API; set directly in DB:\n  UPDATE users SET role = 'ADMIN' WHERE email = 'admin@example.com';",
+      "name": "Eventual — Microservices Architecture",
+      "description": "REST API collection for the Eventual Microservices architecture running on port 8080.\n\n--- GETTING STARTED ---\n1. Create 5 databases:\n   psql -U postgres -c 'CREATE DATABASE eventual_users;'\n   psql -U postgres -c 'CREATE DATABASE eventual_events;'\n   psql -U postgres -c 'CREATE DATABASE eventual_notifications;'\n   psql -U postgres -c 'CREATE DATABASE eventual_vendors;'\n   psql -U postgres -c 'CREATE DATABASE eventual_support;'\n2. Load schemas:\n   psql -U postgres -d eventual_users         -f selected/eventual.database/user-service.sql\n   psql -U postgres -d eventual_events        -f selected/eventual.database/event-service.sql\n   psql -U postgres -d eventual_notifications -f selected/eventual.database/notification-service.sql\n   psql -U postgres -d eventual_vendors       -f selected/eventual.database/vendor-service.sql\n   psql -U postgres -d eventual_support       -f selected/eventual.database/support-service.sql\n3. Run the app: cd selected && docker compose up --build\n4. Register via POST /api/users/register\n5. Login via POST /api/users/login — copy the 'token' from the response\n6. Open Manage Environments → paste token into the 'token' variable\n\n--- ROLES ---\nORGANIZER  — can create/update events, groups, vendors\nPARTICIPANT — can RSVP, join groups, post reviews\nADMIN       — cannot register via API; set directly in DB:\n  UPDATE users SET role = 'ADMIN' WHERE email = 'admin@example.com';",
       "scope": "collection"
     },
 
@@ -114,6 +114,15 @@
       "name": "📂 Categories",
       "description": "Lookup available event/interest categories.",
       "metaSortKey": -100
+    },
+
+    {
+      "_id": "fld_reindex",
+      "_type": "request_group",
+      "parentId": "wrk_eventual",
+      "name": "🔄 Search Reindex",
+      "description": "Manage the Elasticsearch search index. Required once after initial database load, and again after bulk data imports.",
+      "metaSortKey": -50
     },
 
     {
@@ -617,8 +626,8 @@
       "parentId": "fld_notifs",
       "name": "Get Notifications",
       "method": "GET",
-      "url": "{{base_url}}/notifications",
-      "description": "Get paginated notifications for the authenticated user, newest first.\nNote: base path is /notifications — NOT /api/notifications.",
+      "url": "{{base_url}}/api/notifications",
+      "description": "Get paginated notifications for the authenticated user, newest first.",
       "headers": [
         { "id": "h1", "name": "Authorization", "value": "Bearer {{token}}" }
       ],
@@ -636,7 +645,7 @@
       "parentId": "fld_notifs",
       "name": "Get Unread Count",
       "method": "GET",
-      "url": "{{base_url}}/notifications/unread-count",
+      "url": "{{base_url}}/api/notifications/unread-count",
       "description": "Returns: { \"unread_count\": 3 }",
       "headers": [
         { "id": "h1", "name": "Authorization", "value": "Bearer {{token}}" }
@@ -651,7 +660,7 @@
       "parentId": "fld_notifs",
       "name": "Mark Notification as Read",
       "method": "PATCH",
-      "url": "{{base_url}}/notifications/{{notification_id}}/read",
+      "url": "{{base_url}}/api/notifications/{{notification_id}}/read",
       "description": "Mark a single notification as read.",
       "headers": [
         { "id": "h1", "name": "Authorization", "value": "Bearer {{token}}" }
@@ -666,7 +675,7 @@
       "parentId": "fld_notifs",
       "name": "Mark All as Read",
       "method": "PATCH",
-      "url": "{{base_url}}/notifications/read-all",
+      "url": "{{base_url}}/api/notifications/read-all",
       "description": "Mark all of the authenticated user's notifications as read. Returns 204 No Content.",
       "headers": [
         { "id": "h1", "name": "Authorization", "value": "Bearer {{token}}" }
@@ -681,7 +690,7 @@
       "parentId": "fld_notifs",
       "name": "Delete Notification",
       "method": "DELETE",
-      "url": "{{base_url}}/notifications/{{notification_id}}",
+      "url": "{{base_url}}/api/notifications/{{notification_id}}",
       "description": "Delete a notification. Returns 204 No Content.",
       "headers": [
         { "id": "h1", "name": "Authorization", "value": "Bearer {{token}}" }
@@ -1037,6 +1046,36 @@
       ],
       "body": {},
       "metaSortKey": -1000
+    },
+
+    {
+      "_id": "req_reindex",
+      "_type": "request",
+      "parentId": "fld_reindex",
+      "name": "Trigger Reindex",
+      "method": "POST",
+      "url": "{{base_url}}/api/search/reindex",
+      "description": "Start a full Elasticsearch reindex. Reads all events and groups from PostgreSQL, generates Ollama vector embeddings, and writes documents to the search index.\nReturns 202 Accepted immediately — the job runs in the background.\nReturns 409 Conflict if a reindex is already in progress.\nRequires authentication.",
+      "headers": [
+        { "id": "h1", "name": "Authorization", "value": "Bearer {{token}}" }
+      ],
+      "body": {},
+      "metaSortKey": -1000
+    },
+
+    {
+      "_id": "req_reindex_status",
+      "_type": "request",
+      "parentId": "fld_reindex",
+      "name": "Get Reindex Status",
+      "method": "GET",
+      "url": "{{base_url}}/api/search/reindex/status",
+      "description": "Poll the status of the current or most recent reindex job.\nResponse fields: state (IDLE | RUNNING | COMPLETED | FAILED), eventsIndexed, groupsIndexed, eventsFailed, groupsFailed, totalEvents, totalGroups, startedAt, completedAt, error.",
+      "headers": [
+        { "id": "h1", "name": "Authorization", "value": "Bearer {{token}}" }
+      ],
+      "body": {},
+      "metaSortKey": -990
     }
 
   ]
