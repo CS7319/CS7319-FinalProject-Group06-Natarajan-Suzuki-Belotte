@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
-import { EventInfo, EventGroup, EventResult } from '../../shared/data/event.data';
+import { EventInfo, EventGroup, EventResult, GroupResult } from '../../shared/data/event.data';
 import { ProfileService } from '../profile/profile.service';
 import { environment } from '../../../environments/environment';
 
@@ -17,13 +17,13 @@ export class SearchService {
     const token = this.profileService.getUserInfo().token;
     return this.httpClient.get<EventResult>(`${this.apiUrl}/search/events`, {
       headers: { Authorization: `Bearer ${token}` },
-      // params: { query: 'tech' },
+      params: { query },
     });
   }
 
-  getGroups(): Observable<EventGroup[]> {
+  getGroups(): Observable<GroupResult> {
     const token = this.profileService.getUserInfo().token;
-    return this.httpClient.get<EventGroup[]>(`${this.apiUrl}/api/search/groups`, {
+    return this.httpClient.get<GroupResult>(`${this.apiUrl}/search/groups`, {
       headers: { Authorization: `Bearer ${token}` },
     });
   }

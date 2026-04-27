@@ -26,16 +26,27 @@ export class SocialEvent implements OnInit {
       error: () => {
         this.socialEvent.set({
           id: 2026,
-          organizerEmail: 'Peruna',
-          organizerName: 'hello@smu.edu',
+          event_id: 2026,
+          group_id: 1,
+          organizer_name: 'Peruna',
+          organizer_email: 'hello@smu.edu',
           title: 'Event 2026',
-          startDatetime: new Date(),
+          start_date_time: new Date(),
           location: 'Dallas, TX',
           description:
             'Lorem ipsum dolor sit amet consectetur adipisicing elit. Magni ratione recusandae voluptas totam aut dicta, aspernatur velit molestiae obcaecati pariatur quas accusamus dolorum iusto blanditiis nihil, saepe a at. Nihil!',
         });
       },
-      next: (event) => this.socialEvent.set(event),
+      next: (event) => {
+        console.log('Fetched event', event);
+        this.socialEventService.getRSVPs(event?.event_id).subscribe({
+          error: (error) => console.error('Error fetching RSVPs', error),
+          next: (rsvps) => {
+            this.socialEvent.set(event);
+            this.socialEvent().rsvps = rsvps.slice(0, 3);
+          },
+        });
+      },
     });
   }
 }

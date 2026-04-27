@@ -19,11 +19,9 @@ export class Search implements OnInit {
   ngOnInit(): void {
     this.getSocialGroups();
 
-    // this.route.queryParams.subscribe((params) => {
-    //   this.getSocialEvents(params['group']);
-    // });
-
-    this.getSocialEvents('');
+    this.route.queryParams.subscribe((params) => {
+      this.getSocialEvents(params['query'] || '');
+    });
   }
 
   getSocialEvents(query: string): void {
@@ -33,31 +31,25 @@ export class Search implements OnInit {
         this.socialEvents.set([
           {
             id: 1,
-            organizerEmail: 'Peruna',
-            organizerName: 'hello@smu.edu',
+            event_id: 1,
+            group_id: 1,
+            organizer_email: 'Peruna',
+            organizer_name: 'hello@smu.edu',
             title: 'Event 1',
-            startDatetime: new Date(),
+            start_date_time: new Date(),
             location: 'Dallas, TX',
             description:
               'Lorem ipsum dolor sit amet consectetur adipisicing elit. Magni ratione recusandae voluptas totam aut dicta, aspernatur velit molestiae obcaecati pariatur quas accusamus dolorum iusto blanditiis nihil, saepe a at. Nihil!',
           },
           {
             id: 2,
-            organizerEmail: 'Peruna',
-            organizerName: 'hello@smu.edu',
+            event_id: 2,
+            group_id: 2,
+            organizer_email: 'Peruna',
+            organizer_name: 'hello@smu.edu',
             title: 'Event 2',
-            startDatetime: new Date(),
+            start_date_time: new Date(),
             location: 'Fort Worth, TX',
-            description:
-              'Lorem ipsum dolor sit amet consectetur adipisicing elit. Magni ratione recusandae voluptas totam aut dicta, aspernatur velit molestiae obcaecati pariatur quas accusamus dolorum iusto blanditiis nihil, saepe a at. Nihil!',
-          },
-          {
-            id: 3,
-            organizerEmail: 'Peruna',
-            organizerName: 'hello@smu.edu',
-            title: 'Event 3',
-            startDatetime: new Date(),
-            location: 'Austin, TX',
             description:
               'Lorem ipsum dolor sit amet consectetur adipisicing elit. Magni ratione recusandae voluptas totam aut dicta, aspernatur velit molestiae obcaecati pariatur quas accusamus dolorum iusto blanditiis nihil, saepe a at. Nihil!',
           },
@@ -73,13 +65,25 @@ export class Search implements OnInit {
     this.searchService.getGroups().subscribe({
       error: () => {
         this.socialGroups.set([
-          { id: 1, name: 'Group 1' },
-          { id: 2, name: 'Group 2' },
-          { id: 3, name: 'Group 3' },
-          { id: 4, name: 'Group 4' },
+          {
+            id: '10',
+            name: 'Group 10 - Gaming',
+            description: 'Auto-generated group #10',
+            owner_email: 'jade.ward7@example.com',
+            is_public: true,
+            member_count: 1,
+          },
+          {
+            id: '1',
+            name: 'Group 1 - Travel',
+            description: 'Auto-generated group #1',
+            owner_email: 'jade.ward7@example.com',
+            is_public: true,
+            member_count: 1,
+          },
         ]);
       },
-      next: (groups) => this.socialGroups.set(groups || []),
+      next: (group) => this.socialGroups.set(group?.hits || []),
     });
   }
 }
