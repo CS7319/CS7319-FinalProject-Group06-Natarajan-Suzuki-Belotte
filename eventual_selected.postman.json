@@ -1,7 +1,7 @@
 {
   "info": {
-    "name": "Eventual — Layered Architecture",
-    "description": "REST API collection for the Eventual monolith (N-Tier / Layered architecture) running on port 8080.\n\nGETTING STARTED\n1. Run the app: cd selected && docker compose up --build\n2. Create DB: psql -U postgres -c 'CREATE DATABASE eventual;'\n3. Run schema: psql -U postgres -d eventual -f selected/eventual.database/schema.sql\n4. Register via POST /api/users/register\n5. Login via POST /api/users/login — the token is saved automatically to the collection variable\n\nROLES\n- ORGANIZER   — can create/update events, groups, vendors\n- PARTICIPANT  — can RSVP, join groups, post reviews\n- ADMIN        — cannot register via API; promote in DB:\n    UPDATE users SET role = 'ADMIN' WHERE email = 'admin@example.com';\n\nAUTH\nCollection-level Bearer auth reads {{token}}. The Login request auto-saves the token on success.",
+    "name": "Eventual — Microservices Architecture",
+    "description": "REST API collection for the Eventual Microservices architecture running on port 8080.\n\nGETTING STARTED\n1. Create 5 databases:\n    psql -U postgres -c 'CREATE DATABASE eventual_users;'\n    psql -U postgres -c 'CREATE DATABASE eventual_events;'\n    psql -U postgres -c 'CREATE DATABASE eventual_notifications;'\n    psql -U postgres -c 'CREATE DATABASE eventual_vendors;'\n    psql -U postgres -c 'CREATE DATABASE eventual_support;'\n2. Load schemas:\n    psql -U postgres -d eventual_users         -f selected/eventual.database/user-service.sql\n    psql -U postgres -d eventual_events        -f selected/eventual.database/event-service.sql\n    psql -U postgres -d eventual_notifications -f selected/eventual.database/notification-service.sql\n    psql -U postgres -d eventual_vendors       -f selected/eventual.database/vendor-service.sql\n    psql -U postgres -d eventual_support       -f selected/eventual.database/support-service.sql\n3. Run the app: cd selected && docker compose up --build\n4. Register via POST /api/users/register\n5. Login via POST /api/users/login — the token is saved automatically to the collection variable\n\nROLES\n- ORGANIZER   — can create/update events, groups, vendors\n- PARTICIPANT  — can RSVP, join groups, post reviews\n- ADMIN        — cannot register via API; promote in DB:\n    UPDATE users SET role = 'ADMIN' WHERE email = 'admin@example.com';\n\nAUTH\nCollection-level Bearer auth reads {{token}}. The Login request auto-saves the token on success.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "auth": {
@@ -578,7 +578,7 @@
 
     {
       "name": "🔔 Notifications",
-      "description": "In-app notifications. Note: base path is /notifications, not /api/notifications.",
+      "description": "In-app notifications.",
       "item": [
         {
           "name": "Get Notifications",
@@ -586,9 +586,9 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{base_url}}/notifications?page=0&size=20",
+              "raw": "{{base_url}}/api/notifications?page=0&size=20",
               "host": ["{{base_url}}"],
-              "path": ["notifications"],
+              "path": ["api", "notifications"],
               "query": [
                 { "key": "page", "value": "0",  "disabled": false },
                 { "key": "size", "value": "20", "disabled": false }
@@ -603,9 +603,9 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{base_url}}/notifications/unread-count",
+              "raw": "{{base_url}}/api/notifications/unread-count",
               "host": ["{{base_url}}"],
-              "path": ["notifications", "unread-count"]
+              "path": ["api", "notifications", "unread-count"]
             },
             "description": "Returns { \"unread_count\": N }"
           }
@@ -616,9 +616,9 @@
             "method": "PATCH",
             "header": [],
             "url": {
-              "raw": "{{base_url}}/notifications/{{notification_id}}/read",
+              "raw": "{{base_url}}/api/notifications/{{notification_id}}/read",
               "host": ["{{base_url}}"],
-              "path": ["notifications", "{{notification_id}}", "read"]
+              "path": ["api", "notifications", "{{notification_id}}", "read"]
             },
             "description": "Mark a single notification as read."
           }
@@ -629,9 +629,9 @@
             "method": "PATCH",
             "header": [],
             "url": {
-              "raw": "{{base_url}}/notifications/read-all",
+              "raw": "{{base_url}}/api/notifications/read-all",
               "host": ["{{base_url}}"],
-              "path": ["notifications", "read-all"]
+              "path": ["api", "notifications", "read-all"]
             },
             "description": "Mark all notifications as read. Returns 204 No Content."
           }
@@ -642,9 +642,9 @@
             "method": "DELETE",
             "header": [],
             "url": {
-              "raw": "{{base_url}}/notifications/{{notification_id}}",
+              "raw": "{{base_url}}/api/notifications/{{notification_id}}",
               "host": ["{{base_url}}"],
-              "path": ["notifications", "{{notification_id}}"]
+              "path": ["api", "notifications", "{{notification_id}}"]
             },
             "description": "Delete a notification. Returns 204 No Content."
           }
@@ -1007,6 +1007,39 @@
               "path": ["api", "categories"]
             },
             "description": "List all available category types. Use these in event categoryTypes and user preferences."
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "🔄 Search Reindex",
+      "description": "Manage the Elasticsearch search index. Required once after initial database load, and again after bulk data imports.",
+      "item": [
+        {
+          "name": "Trigger Reindex",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/search/reindex",
+              "host": ["{{base_url}}"],
+              "path": ["api", "search", "reindex"]
+            },
+            "description": "Start a full Elasticsearch reindex. Reads all events and groups from PostgreSQL, generates Ollama vector embeddings, and writes documents to the search index.\nReturns 202 Accepted immediately — the job runs in the background.\nReturns 409 Conflict if a reindex is already in progress.\nRequires authentication."
+          }
+        },
+        {
+          "name": "Get Reindex Status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/search/reindex/status",
+              "host": ["{{base_url}}"],
+              "path": ["api", "search", "reindex", "status"]
+            },
+            "description": "Poll the status of the current or most recent reindex job.\nResponse fields: state (IDLE | RUNNING | COMPLETED | FAILED), eventsIndexed, groupsIndexed, eventsFailed, groupsFailed, totalEvents, totalGroups, startedAt, completedAt, error."
           }
         }
       ]

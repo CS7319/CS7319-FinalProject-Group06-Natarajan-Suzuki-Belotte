@@ -1,579 +1,427 @@
 # Eventual — Event Management Platform
 
-**CS7319 Final Project — Group 06**
-Harini Natarajan · Zachary Suzuki · Fred Belotte
+**CS7319 — Software Architecture & Design | Final Project Report**
+Group 06: Harini Natarajan · Zachary Suzuki · Fred Belotte
+April 2026
 
 ---
 
-## Overview
-
-Eventual is a full-featured event management platform built and evaluated under two architectural styles:
-
-| Directory     | Architecture         | Description                                                                                                                                                          |
-| ------------- | -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `selected/`   | **Layered (N-Tier)** | Single Spring Boot monolith with one shared PostgreSQL database (`eventual`), Elasticsearch (hybrid search), and Ollama (semantic embeddings)                        |
-| `unselected/` | **Microservices**    | API Gateway + six independent services (User, Event, Search, Notification, Vendor, Support), each with its own PostgreSQL database, communicating via REST and Kafka |
+> The `selected/` folder contains the **Microservices** architecture and `unselected/` contains the **Layered (N-Tier)** architecture. During initial project proposal phase, Layered was the recommended choice. After implementing both architectures, we reversed its decision — **Microservices is the final selected architecture**.
 
 ---
 
-## Selected Architecture — Layered (N-Tier)
+## Section 1: Implementation Platform
 
-### Prerequisites
+### 1.1 Technology Stack
 
-| Tool           | Version                          | Notes                                          |
-| -------------- | -------------------------------- | ---------------------------------------------- |
-| Docker Desktop | 4.x or later                     | Runs Elasticsearch, Ollama, and the app        |
-| Docker Compose | v2 (bundled with Docker Desktop) |                                                |
-| Insomnia       | v12 or later                     | Recommended to interface with the API directly |
+| Component | Technology | Version | Role |
+|-----------|-----------|---------|------|
+| Backend Language | Java (Eclipse Temurin JDK) | 23 | Server-side business logic |
+| Backend Framework | Spring Boot | 3.4.4 | REST API, dependency injection, security |
+| API Gateway | Spring Cloud Gateway | 2024.0.1 | JWT validation and request routing (microservices) |
+| Build Tool | Apache Maven | 3.9 | Dependency management and compilation (inside Docker) |
+| Frontend | Angular | 21.2.0 | Single-page application, served by Nginx in Docker |
+| Database | PostgreSQL | 16 | Relational persistence (5 isolated databases in microservices) |
+| Search Engine | Elasticsearch | 8.13.4 | Full-text (BM25) and K-NN vector search, 3-node cluster |
+| Embedding Server | Ollama — nomic-embed-text | latest | Local semantic embeddings, 768-dimensional vectors |
+| Message Broker | Apache Kafka | 3.7 (KRaft) | Asynchronous event messaging (microservices only) |
+| Authentication | JWT — jjwt | 0.12.6 | Stateless token-based authentication and authorisation |
+| Container Runtime | Docker Desktop | 4.x | Runs all services; the only required runtime prerequisite |
+| API Documentation | SpringDoc / Swagger UI | 2.8.3 | Auto-generated interactive API docs at `/swagger-ui` |
 
-> No local JDK or Maven installation is required — the app builds and runs inside Docker.
+> Java, Maven, and the Angular CLI are used exclusively inside Docker build containers and do not need to be installed on the host machine.
 
----
+### 1.2 Prerequisites
 
-### Quick Start
+Only two tools need to be installed on the host machine. Everything else — the JVM, Elasticsearch, Kafka, Ollama — is provisioned automatically by Docker Compose.
+
+| Prerequisite | Version | Download |
+|-------------|---------|---------|
+| Docker Desktop | 4.x or later | https://www.docker.com/products/docker-desktop/ |
+| PostgreSQL | 16 | https://www.postgresql.org/download/ |
+
+### 1.3 Installation and Configuration
+
+**Docker Desktop** must be installed and running before any Docker Compose command is issued. The three-node Elasticsearch cluster and Kafka together require at least **6 GB RAM and 4 CPUs**. Set these limits in Docker Desktop → Settings → Resources.
+
+**PostgreSQL 16** must be running on the host machine at the default port 5432. The application containers connect to it via `host.docker.internal`. The expected superuser password is `postgres1`. If a different password is used, update the `SPRING_DATASOURCE_PASSWORD` environment variable in the relevant `docker-compose.yml` before starting the stack.
+
+Verify PostgreSQL is reachable:
 
 ```bash
-# 1. Clone the repo and enter the selected directory
+psql -h localhost -p 5432 -U postgres -c "SELECT version();"
+```
+
+---
+
+## Section 2: Build Process
+
+Both implementations use a fully Dockerised, multi-stage build pipeline. No local Java, Maven, or Angular CLI installation is required. Docker Compose compiles the source, packages the JAR artefacts, and assembles the runtime images.
+
+### 2.1 Selected Architecture — Microservices (`selected/` folder)
+
+The build is coordinated by a Maven reactor project at `selected/eventual.backend/pom.xml`. Each of the seven services has an independent Dockerfile. Docker Compose builds all seven images.
+
+```bash
 cd CS7319-FinalProject-Group06-Natarajan-Suzuki-Belotte/selected
-
-# 2. Build and start all services
 docker compose up --build
-
-# 3. Wait for the health checks to pass (≈ 60–90 s on first run)
-#    You will see: "Started EventualApplication in X seconds"
-
-# 4. The API is now available at
-#    http://localhost:4201
-#    Swagger UI: http://localhost:4201/swagger-ui/index.html
-
-# 5. The UI is now available at
-#    http://localhost:4200
 ```
 
-To stop everything:
+The first run downloads all Maven dependencies into a Docker layer cache, which takes approximately 5–10 minutes. Subsequent builds reuse the cache and complete significantly faster.
+
+### 2.2 Unselected Architecture — Layered (`unselected/` folder)
+
+The layered implementation is packaged as a single Spring Boot application using a single Dockerfile at `unselected/Dockerfile`.
 
 ```bash
-docker compose down
+cd CS7319-FinalProject-Group06-Natarajan-Suzuki-Belotte/unselected
+docker compose up --build
 ```
 
-To stop and wipe all persisted data (volumes):
-
-```bash
-docker compose down --volumes
-```
+The initial build completes in approximately 3–5 minutes.
 
 ---
 
-### User Interface
+## Section 3: System Execution
 
-### Step 1 - Sign Up/Register User
+### 3.1 Running the Selected Architecture — Microservices (`selected/` folder)
 
-1. Navigate to http://localhost:4200/
-2. Click the SignUp button on the navigation bar.
-3. Enter Name, Email and Password (must be at least 8 characters long) and Click Sign Up at the bottom of the modal.
-   1. If the registration is invalid, the error will be listed in the browser console.
-   2. If the registration is valid, there will be no error listed.
-4. Upon registering the user, you can now login.
-5. Click the Log In button on the navigation bar.
-6. Enter Email and Password as entered in the Sign Up above.
-   1. If the Log In is unsuccesful, an error will be listed in the browser console.
-7. The navigation bar will change to Profile and Log Out in place of Sign Up and Log in.
-8. The Authentication Workflow is discussed in the next section.
+The microservices variant uses a Database-per-Service pattern. Five PostgreSQL databases must be created and their schemas loaded before starting Docker Compose.
 
-### Authentication — JWT
-
-All API endpoints except **Register** and **Login** require a valid JWT token.
-
-#### Step 1 — Register a user
-
-```
-POST http://localhost:8080/api/users/register
-Content-Type: multipart/form-data
-
-email=alice@example.com
-password=secret123
-firstName=Alice
-lastName=Example
-role=ORGANIZER        ← valid values: ORGANIZER | PARTICIPANT
-```
-
-#### Step 2 — Log in to get a token
-
-```
-POST http://localhost:8080/api/users/login
-Content-Type: application/json
-
-{
-  "email": "alice@example.com",
-  "password": "secret123"
-}
-```
-
-**Response:**
-
-```json
-{
-  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-}
-```
-
-#### Step 3 — Send the token with every subsequent request
-
-Add an `Authorization` header to every request:
-
-```
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-```
-
-| Client     | Where to set it                                                            |
-| ---------- | -------------------------------------------------------------------------- |
-| Insomnia   | Request → **Auth** tab → **Bearer Token** → paste the token                |
-| Postman    | Request → **Authorization** tab → Type: **Bearer Token** → paste the token |
-| curl       | `-H "Authorization: Bearer <token>"`                                       |
-| Swagger UI | Click **Authorize** (🔒) at the top → enter `Bearer <token>`               |
-
-> **Using the provided collections**: The Postman collection (`eventual_selected.postman.json`) automatically saves the token from the login response to a collection variable and attaches it to all subsequent requests. In Insomnia, set the `token` environment variable after logging in.
-
----
-
-### Service Ports
-
-| Service              | Port | URL                   | Runs in |
-| -------------------- | ---- | --------------------- | ------- |
-| Spring Boot App      | 4201 | http://localhost:4201 | Docker  |
-| Elasticsearch (es01) | —    | internal only         | Docker  |
-| Elasticsearch (es02) | —    | internal only         | Docker  |
-| Elasticsearch (es03) | —    | internal only         | Docker  |
-| Ollama               | —    | internal only         | Docker  |
-| Kibana _(optional)_  | 5601 | http://localhost:5601 | Docker  |
-
----
-
-### Connecting to PostgreSQL
-
-PostgreSQL runs on your local machine. Connect using your normal local credentials.
-
-#### psql (command line)
+**Step 1 — Create databases and load schemas:**
 
 ```bash
-psql -h localhost -p 5432 -U postgres -d eventualdb
-```
-
-#### pgAdmin / DBeaver / TablePlus
-
-| Field    | Value        |
-| -------- | ------------ |
-| Host     | `localhost`  |
-| Port     | `5432`       |
-| Database | `eventualdb` |
-| Username | `postgres`   |
-| Password | `postgres1`  |
-
----
-
-### Setting Up Ollama (Semantic Search / Recommendations)
-
-Ollama starts automatically with `docker compose up`, but the embedding model must be pulled **once** after the first startup:
-
-```bash
-docker exec eventual-ollama ollama pull nomic-embed-text
-```
-
-Verify the model is ready:
-
-```bash
-docker exec eventual-ollama ollama list
-# Should show: nomic-embed-text
-```
-
-Ollama's port is not published to the host, so it won't conflict if you also have Ollama running locally.
-
----
-
-### Populating Elasticsearch (Reindex)
-
-After starting the app and loading the PostgreSQL schema, Elasticsearch will be empty. Any events and groups already in the database need to be ingested manually.
-
-#### Trigger the reindex
-
-```
-POST http://localhost:8080/api/search/reindex
-Authorization: Bearer <your-token>
-```
-
-The endpoint returns **202 Accepted** immediately and runs in the background. Poll for progress:
-
-```
-GET http://localhost:8080/api/search/reindex/status
-Authorization: Bearer <your-token>
-```
-
-**Example status response:**
-
-```json
-{
-  "state": "RUNNING",
-  "eventsIndexed": 42,
-  "groupsIndexed": 8,
-  "eventsFailed": 0,
-  "groupsFailed": 0,
-  "totalEvents": 150,
-  "totalGroups": 20,
-  "startedAt": "2025-04-18T10:30:00",
-  "completedAt": null,
-  "error": null
-}
-```
-
-| State       | Meaning                                                     |
-| ----------- | ----------------------------------------------------------- |
-| `IDLE`      | No reindex has been run yet                                 |
-| `RUNNING`   | Reindex is in progress                                      |
-| `COMPLETED` | All records indexed successfully                            |
-| `FAILED`    | An unrecoverable error occurred (`error` field has details) |
-
-> **Note:** If Ollama is unavailable, indexing still proceeds — records are stored with lexical fields only, without a semantic embedding vector. Search falls back to keyword-only results.
-
-> **Note:** Only one reindex can run at a time. A second `POST` while one is running returns `409 Conflict`.
-
----
-
-### Optional — Kibana (Inspect Elasticsearch Indices)
-
-Kibana is included but disabled by default. Start it with:
-
-```bash
-docker compose --profile kibana up
-```
-
-Then open http://localhost:5601 and navigate to **Dev Tools** to query indices:
-
-```json
-GET /events/_search
-{ "query": { "match_all": {} } }
-```
-
----
-
-## Unselected Architecture — Microservices
-
-### Prerequisites
-
-| Tool           | Version                          | Notes                                       |
-| -------------- | -------------------------------- | ------------------------------------------- |
-| Docker Desktop | 4.x or later                     | Runs all services and infrastructure        |
-| Docker Compose | v2 (bundled with Docker Desktop) |                                             |
-| PostgreSQL     | 14+                              | Must be running **locally on your machine** |
-
-#### Local PostgreSQL setup
-
-Each microservice owns its own isolated database — there is no shared database. Create all five databases and load their schemas before starting Docker.
-
-```bash
-# 1. Connect as the superuser and create all five databases
+# Create databases
 psql -U postgres -d postgres <<'SQL'
-CREATE DATABASE eventual_users;
-CREATE DATABASE eventual_events;
-CREATE DATABASE eventual_notifications;
-CREATE DATABASE eventual_vendors;
-CREATE DATABASE eventual_support;
+  CREATE DATABASE eventual_users;
+  CREATE DATABASE eventual_events;
+  CREATE DATABASE eventual_notifications;
+  CREATE DATABASE eventual_vendors;
+  CREATE DATABASE eventual_support;
 SQL
 
-# 2. Load each service's schema
-psql -U postgres -d eventual_users        -f unselected/eventual.database/user-service.sql
-psql -U postgres -d eventual_events       -f unselected/eventual.database/event-service.sql
-psql -U postgres -d eventual_notifications -f unselected/eventual.database/notification-service.sql
-psql -U postgres -d eventual_vendors      -f unselected/eventual.database/vendor-service.sql
-psql -U postgres -d eventual_support      -f unselected/eventual.database/support-service.sql
+# Load schemas
+psql -U postgres -d eventual_users         -f selected/eventual.database/user-service.sql
+psql -U postgres -d eventual_events        -f selected/eventual.database/event-service.sql
+psql -U postgres -d eventual_notifications -f selected/eventual.database/notification-service.sql
+psql -U postgres -d eventual_vendors       -f selected/eventual.database/vendor-service.sql
+psql -U postgres -d eventual_support       -f selected/eventual.database/support-service.sql
 ```
 
-| Database                 | Owned by             | Tables                                                 |
-| ------------------------ | -------------------- | ------------------------------------------------------ |
-| `eventual_users`         | user-service         | `users`, `categories`, `groups`, `group_join_requests` |
-| `eventual_events`        | event-service        | `events`, `rsvp`                                       |
-| `eventual_notifications` | notification-service | `notifications`                                        |
-| `eventual_vendors`       | vendor-service       | `vendors`, `vendor_reviews`, `event_vendors`           |
-| `eventual_support`       | support-service      | `support_tickets`                                      |
-
-> Cross-service references (e.g. an event's `organizer_email`, a ticket's `submitted_by`) are stored as plain `varchar` columns — there are **no foreign keys across databases**. Consistency is enforced at the application layer.
-
----
-
-### Quick Start
+**Step 2 — Start all services:**
 
 ```bash
-# 1. Enter the unselected directory
-cd CS7319-FinalProject-Group06-Natarajan-Suzuki-Belotte/unselected
-
-# 2. Build and start all services
+cd selected
 docker compose up --build
-
-# 3. Wait for Kafka and Elasticsearch health checks to pass (≈ 90–120 s on first run)
-#    All five Spring Boot services start after infrastructure is ready.
-
-# 4. The API Gateway is available at
-#    http://localhost:8080
 ```
 
-To stop everything:
-
-```bash
-docker compose down
-```
-
-To stop and wipe all persisted data (volumes):
-
-```bash
-docker compose down -v
-```
-
----
-
-### Authentication — JWT
-
-Authentication works the same as the selected architecture. The API Gateway validates the JWT on every incoming request before forwarding it to the appropriate service. Only **Register** and **Login** are unauthenticated.
-
-#### Step 1 — Register a user
+The Kafka broker and Elasticsearch cluster perform health checks before the Spring Boot services initialise. The stack is fully operational within 90–120 seconds on the first run. A successful startup produces log lines such as:
 
 ```
-POST http://localhost:8080/api/users/register
-Content-Type: multipart/form-data
-
-email=alice@example.com
-password=secret123
-firstName=Alice
-lastName=Example
-role=ORGANIZER        ← valid values: ORGANIZER | PARTICIPANT
+eventual-user-service   | Started UserServiceApplication in 8.4 seconds
+eventual-event-service  | Started EventServiceApplication in 7.2 seconds
+eventual-search-service | Started SearchServiceApplication in 9.1 seconds
 ```
 
-#### Step 2 — Log in to get a token
-
-```
-POST http://localhost:8080/api/users/login
-Content-Type: application/json
-
-{
-  "email": "alice@example.com",
-  "password": "secret123"
-}
-```
-
-**Response:**
-
-```json
-{
-  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-}
-```
-
-#### Step 3 — Send the token with every subsequent request
-
-```
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-```
-
-> **Using the provided collections**: Import `eventual_selected.postman.json` (Postman) or `eventual_selected.insomnia.json` (Insomnia) from the project root. Both collections are pre-configured with auth headers. The Postman collection automatically saves the token after login.
-
----
-
-### Services
-
-| Service              | Container                       | Port  | Responsibility                                         | Runs in   |
-| -------------------- | ------------------------------- | ----- | ------------------------------------------------------ | --------- |
-| API Gateway          | `eventual-api-gateway`          | 8080  | JWT validation, request routing                        | Docker    |
-| User Service         | `eventual-user-service`         | 8082  | Users, groups, join requests, authentication           | Docker    |
-| Event Service        | `eventual-event-service`        | 8081  | Events, RSVPs                                          | Docker    |
-| Search Service       | `eventual-search-service`       | 8084  | Elasticsearch indexing, hybrid search, recommendations | Docker    |
-| Notification Service | `eventual-notification-service` | 8083  | In-app notifications via Kafka                         | Docker    |
-| Vendor Service       | `eventual-vendor-service`       | 8085  | Vendors, vendor reviews, event–vendor assignments      | Docker    |
-| Support Service      | `eventual-support-service`      | 8086  | Support tickets                                        | Docker    |
-| Kafka                | `eventual-kafka`                | 9092  | Async messaging (KRaft mode)                           | Docker    |
-| Elasticsearch (es01) | `eventual-es01`                 | 9200  | Search index — node 1 (exposed)                        | Docker    |
-| Elasticsearch (es02) | `eventual-es02`                 | —     | Search index — node 2 (internal)                       | Docker    |
-| Elasticsearch (es03) | `eventual-es03`                 | —     | Search index — node 3 (internal)                       | Docker    |
-| Ollama               | `eventual-ollama`               | 11434 | Semantic embeddings                                    | Docker    |
-| PostgreSQL           | —                               | 5432  | Persistent data store                                  | **Local** |
-| Kibana _(optional)_  | `eventual-kibana`               | 5601  | Elasticsearch UI                                       | Docker    |
-
----
-
-### Inter-Service Communication
-
-**Synchronous** calls use REST via Spring `RestClient`. Services call each other by container name (e.g. `http://user-service:8082`) when running in Docker.
-
-**Asynchronous** events flow through Apache Kafka. Topic names are configured in each service's `application.properties` under `kafka.topics.*`.
-
-#### Kafka Topics
-
-| Topic                    | Published by  | Consumed by                          | Trigger                         |
-| ------------------------ | ------------- | ------------------------------------ | ------------------------------- |
-| `event-created`          | event-service | notification-service, search-service | New event created               |
-| `event-updated`          | event-service | notification-service, search-service | Event details changed           |
-| `event-deleted`          | event-service | notification-service, search-service | Event removed                   |
-| `rsvp-created`           | event-service | notification-service                 | User RSVPs to an event          |
-| `rsvp-cancelled`         | event-service | notification-service                 | User cancels their RSVP         |
-| `group-indexed`          | user-service  | search-service                       | New group created or updated    |
-| `group-deleted`          | user-service  | search-service                       | Group removed                   |
-| `join-request-submitted` | user-service  | notification-service                 | User requests to join a group   |
-| `join-request-approved`  | user-service  | notification-service                 | Organizer approves join request |
-| `join-request-rejected`  | user-service  | notification-service                 | Organizer rejects join request  |
-
-Topic names can be overridden via environment variables in `docker-compose.yml`:
-
-```yaml
-environment:
-  KAFKA_TOPICS_EVENT-CREATED: event-created
-  KAFKA_TOPICS_RSVP-CREATED: rsvp-created
-  # ... etc.
-```
-
----
-
-### Setting Up Ollama (Semantic Search / Recommendations)
-
-Pull the embedding model once after the first startup:
+**Step 3 — Pull the Ollama embedding model (once, on first run):**
 
 ```bash
 docker exec eventual-ollama ollama pull nomic-embed-text
+
+# Verify:
+docker exec eventual-ollama ollama list
 ```
 
----
-
-### Populating Elasticsearch (Reindex)
-
-After starting the services and loading the PostgreSQL schemas, Elasticsearch will be empty. Any events and groups already in the database need to be ingested manually.
-
-#### Trigger the reindex
+**Step 4 — Register, authenticate, and populate Elasticsearch:**
 
 ```
+# Register a user
+POST http://localhost:8080/api/users/register
+Content-Type: multipart/form-data
+
+email=alice@example.com  |  password=secret123  |  firstName=Alice
+lastName=Example  |  role=ORGANIZER   (or PARTICIPANT)
+
+# Log in to obtain a JWT token
+POST http://localhost:8080/api/users/login
+Content-Type: application/json
+{ "email": "alice@example.com", "password": "secret123" }
+# Response: { "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." }
+
+# Trigger Elasticsearch reindex (required once after schema load)
 POST http://localhost:8080/api/search/reindex
-Authorization: Bearer <your-token>
+Authorization: Bearer <token>
+
+# Check progress
+GET  http://localhost:8080/api/search/reindex/status
+Authorization: Bearer <token>
 ```
 
-The endpoint returns **202 Accepted** immediately and runs in the background. Poll for progress:
+All subsequent requests require the `Authorization: Bearer <token>` header. The Postman collection (`eventual_selected.postman.json`) automatically saves the token from the login response.
 
-```
-GET http://localhost:8080/api/search/reindex/status
-Authorization: Bearer <your-token>
-```
+**Service ports:**
 
-**Example status response:**
+| Service | Container | Port | Responsibility |
+|---------|-----------|------|---------------|
+| API Gateway | eventual-api-gateway | 8080 | JWT validation, routing — single entry point |
+| User Service | eventual-user-service | 8082 | Users, groups, join requests, authentication |
+| Event Service | eventual-event-service | 8081 | Events, RSVPs, Kafka publishing |
+| Search Service | eventual-search-service | 8084 | Hybrid search, recommendations |
+| Notification Service | eventual-notification-service | 8083 | In-app notifications via Kafka |
+| Vendor Service | eventual-vendor-service | 8085 | Vendors, reviews, event-vendor assignments |
+| Support Service | eventual-support-service | 8086 | Support ticket management |
+| Kafka | eventual-kafka | 9092 | Async messaging (KRaft, no ZooKeeper) |
+| Elasticsearch es01 | eventual-es01 | 9200 | Primary index node |
+| Elasticsearch es02/03 | eventual-es02/03 | — | Replica nodes (internal only) |
+| Ollama | eventual-ollama | — | Embedding model server (internal only) |
+| PostgreSQL | (host) | 5432 | Persistent store — runs outside Docker |
+| Kibana (optional) | eventual-kibana | 5601 | `docker compose --profile kibana up` |
 
-```json
-{
-  "state": "RUNNING",
-  "eventsIndexed": 42,
-  "groupsIndexed": 8,
-  "eventsFailed": 0,
-  "groupsFailed": 0,
-  "totalEvents": 150,
-  "totalGroups": 20,
-  "startedAt": "2025-04-18T10:30:00",
-  "completedAt": null,
-  "error": null
-}
-```
+To stop: `docker compose down`
+To stop and remove all data volumes: `docker compose down -v`
 
-| State       | Meaning                                                     |
-| ----------- | ----------------------------------------------------------- |
-| `IDLE`      | No reindex has been run yet                                 |
-| `RUNNING`   | Reindex is in progress                                      |
-| `COMPLETED` | All records indexed successfully                            |
-| `FAILED`    | An unrecoverable error occurred (`error` field has details) |
-
-> **Note:** The reindex calls Ollama to generate semantic embeddings for each record. If Ollama is unavailable, indexing still proceeds — records are stored in Elasticsearch with lexical fields only, without a semantic embedding vector. Search will fall back to keyword-only results.
-
-> **Note:** Only one reindex can run at a time. A second `POST` while one is in progress returns `409 Conflict`.
+**API exploration:** Swagger UI is available at `http://localhost:8080/swagger-ui/index.html`. Click Authorize and supply the bearer token to invoke endpoints from the browser. Pre-configured collections for Postman (`eventual_selected.postman.json`) and Insomnia (`eventual_selected.insomnia.json`) are included in the project root.
 
 ---
 
-### Optional — Kibana
+### 3.2 Running the Unselected Architecture — Layered (`unselected/` folder)
+
+The layered variant uses a single shared database.
+
+**Step 1 — Create the database and load the schema:**
 
 ```bash
-docker compose --profile kibana up
+psql -U postgres -d postgres -c "CREATE DATABASE eventual;"
+psql -U postgres -d eventual -f unselected/eventual.database/schema.sql
+
+# Optional — load sample seed data:
+psql -U postgres -d eventual -f unselected/eventual.database/02_data.sql
 ```
 
-Then open http://localhost:5601.
+**Step 2 — Start the stack:**
+
+```bash
+cd unselected
+docker compose up --build
+```
+
+The stack is operational within 60–90 seconds. The Ollama model pull and Elasticsearch reindex steps are identical to those in Section 3.1.
+
+**Service ports:**
+
+| Service | Port |
+|---------|------|
+| Spring Boot Application | 8080 |
+| PostgreSQL | 5432 (host) |
+| Elasticsearch (3 nodes) | internal |
+| Ollama | internal |
+| Kibana (optional) | 5601 |
 
 ---
 
-## Project Structure
+## Section 4: Architecture Design — Comparison and Rationale
 
-```
-CS7319-FinalProject-Group06-Natarajan-Suzuki-Belotte/
-├── README.md                          ← this file
-│
-├── selected/                          ← Layered (N-Tier) architecture
-│   ├── Dockerfile                     ← Multi-stage Maven build + JRE runtime
-│   ├── docker-compose.yml             ← Elasticsearch + Ollama + App (PostgreSQL is local)
-│   ├── eventual.backend/              ← Spring Boot monolith source
-│   │   ├── pom.xml
-│   │   └── src/
-│   │       └── main/
-│   │           ├── java/
-│   │           │   └── com/CS7319/Group06/eventual/
-│   │           │       ├── controller/
-│   │           │       ├── service/
-│   │           │       ├── dao/
-│   │           │       ├── model/
-│   │           │       └── config/
-│   │           └── resources/
-│   │               └── application.properties
-│   └── eventual.database/
-│       ├── schema.sql                 ← DDL (auto-loaded on first start)
-│       └── db_dml.sql                 ← Seed data (auto-loaded on first start)
-│
-└── unselected/                        ← Microservices architecture
-    ├── docker-compose.yml             ← Kafka + Elasticsearch + Ollama + all 7 services
-    ├── eventual.database/
-    │   ├── user-service.sql           ← Schema for eventual_users
-    │   ├── event-service.sql          ← Schema for eventual_events
-    │   ├── notification-service.sql   ← Schema for eventual_notifications
-    │   ├── vendor-service.sql         ← Schema for eventual_vendors
-    │   └── support-service.sql        ← Schema for eventual_support
-    └── eventual.backend/
-        ├── pom.xml                    ← Parent POM (reactor build)
-        ├── api-gateway/               ← Spring Cloud Gateway (port 8080)
-        │   ├── Dockerfile
-        │   └── src/main/resources/
-        │       ├── application.yml        ← local dev config
-        │       └── application-docker.yml ← Docker route overrides
-        ├── user-service/              ← Users, Groups, Join Requests (port 8082)
-        │   └── Dockerfile
-        ├── event-service/             ← Events, RSVPs (port 8081)
-        │   └── Dockerfile
-        ├── search-service/            ← Elasticsearch, Hybrid Search, Recommendations (port 8084)
-        │   └── Dockerfile
-        ├── notification-service/      ← In-app Notifications via Kafka (port 8083)
-        │   └── Dockerfile
-        ├── vendor-service/            ← Vendors, Reviews, Event–Vendor links (port 8085)
-        │   └── Dockerfile
-        └── support-service/           ← Support Tickets (port 8086)
-            └── Dockerfile
-```
+### 4.1 Candidate Architecture A — Layered (N-Tier) [Unselected]
+
+**Repository location:** `unselected/` folder
+
+The Layered architecture realises the entire Eventual platform as a single Spring Boot application organised into four horizontal layers:
+
+1. **Presentation Layer** — thirteen REST controllers handle all inbound HTTP traffic (UserController, EventController, GroupController, RsvpController, SearchController, RecommendationController, VendorController, NotificationController, CategoryController, SupportController, and others).
+2. **Business Logic Layer** — thirteen service interfaces and their implementations enforce domain rules (EventService, GroupService, RsvpService, SearchService, IngestionService, NotificationService, VendorService, EmbeddingService, and others).
+3. **Data Access Layer** — over ten DAO interfaces with pure JDBC implementations execute hand-written SQL (JdbcEventDao, JdbcGroupDao, JdbcRsvpDao, ElasticSearchDao, ElasticsearchIngestionDao, and others).
+4. **Persistence Layer** — a single PostgreSQL database (`eventual`) shared by all layers, supplemented by a three-node Elasticsearch cluster for search and an Ollama server for semantic embeddings.
+
+Asynchronous work — notification dispatch, Elasticsearch indexing, and batch reindexing — is handled by three named Spring `ThreadPoolTaskExecutor` beans (`notificationExecutor`, `ingestionExecutor`, `reindexExecutor`) running within the same process. No external message broker is required.
+
+**Advantages:**
+- Strong ACID transactions — RSVP waitlist promotions, group membership changes, and notification creation are atomic within a single database transaction.
+- Single deployable unit — the entire application runs in one Docker container.
+- In-process communication — calls between Controller, Service, and DAO are direct Java method invocations with no network overhead.
+- Single observability surface — all log events originate from one process, simplifying debugging.
+- Centralised data — a query spanning users, events, and notifications is a single SQL JOIN.
+
+**Disadvantages:**
+- Single point of failure — an unhandled exception or memory exhaustion in any module terminates the entire platform, including the core event and RSVP subsystems.
+- Indivisible scaling — the Ollama embedding workload is disproportionately CPU-intensive, but the entire monolith must be scaled to provide it with additional resources.
+- Tight coupling — modifications to shared model classes propagate across controller, service, and DAO layers simultaneously.
+- Monolithic growth risk — the codebase becomes progressively harder to navigate and maintain as feature scope expands.
 
 ---
 
-## Technology Stack
+### 4.2 Candidate Architecture B — Microservices [Selected]
 
-| Layer          | Technology                     |
-| -------------- | ------------------------------ |
-| User Interface | Angular 21                     |
-| CSS Library    | Bulma 1.x, Angular Material 21 |
-| Language       | Java 25                        |
-| Framework      | Spring Boot 3.4.4              |
-| Database       | PostgreSQL 17                  |
-| Search         | Elasticsearch 8.13.4           |
-| Embeddings     | Ollama + nomic-embed-text      |
-| Messaging      | Apache Kafka                   |
-| Auth           | JWT (jjwt 0.12.6)              |
-| Build          | Maven 3.9                      |
-| Container      | Docker + Docker Compose        |
+**Repository location:** `selected/` folder
 
-## Rationale for our Selection
+The Microservices architecture decomposes Eventual into seven independently deployable services, each owning its own database and communicating via synchronous REST and asynchronous Kafka messaging.
 
-As we have discussed in our presentation, we have chosen the Layered Architecture Style for our project. It is a monolith-like structure composed of distinct layers namely presentation, business logic/domain, and data access layers. Each layer stacks on top of the prior layer defining its responsibility and interaction interface. With this approach we gain separation of concerns. In a Micro-Service Architecture Style, rather than thinking horizontally, the structure is flipped vertically and each domain class becomes it own self-contained modular monolith or service. This structure necessitate the need for a network-oriented approach to operate. Operational complexity is likely the main differentiator between these 2 architectures.
+**Service decomposition:**
 
-Layered Architecture is relatively simple to design and implement because it is built around the concept of a single deployment unit. In contrast, Microservices Architecture is highly modular, providing the flexibility to build a system incrementally, one service at a time. However, this flexibility introduces its own set of challenges, particularly those associated with the distributed nature of the architecture, such as increased complexity in service discovery, interaction, and deployment.
-The rationale for selecting a Layered Architecture for our project was primarily based on the initial complexity of the features we intended to implement. By focusing on these features, we were able to develop the core functionality of the application. Additionally, this approach allowed us to run the application locally, troubleshoot implementation issues, and iterate during development.
-In summary, the practicality of Layered Architecture outweighed the benefits of scalability, flexibility, and independent deployment offered by Microservices Architecture for this particular project.
+| Service | Port | Database | Responsibility |
+|---------|------|---------|---------------|
+| API Gateway | 8080 | None | JWT validation, declarative route configuration |
+| User Service | 8082 | eventual_users | Users, groups, join requests, authentication |
+| Event Service | 8081 | eventual_events | Events, RSVPs, Kafka event publishing |
+| Search Service | 8084 | Elasticsearch | Hybrid search, recommendations, index management |
+| Notification Service | 8083 | eventual_notifications | In-app notifications via Kafka consumers |
+| Vendor Service | 8085 | eventual_vendors | Vendor catalogue, reviews, event-vendor links |
+| Support Service | 8086 | eventual_support | Support ticket lifecycle |
+
+**Communication model:**
+- **Synchronous REST** — services address one another by Docker network hostname (e.g., `http://user-service:8082`) for operations requiring an immediate response.
+- **Asynchronous Kafka** — the Event Service and User Service publish domain events to named Kafka topics; the Notification and Search Services consume these events independently. This decouples producers from consumers and makes the system resilient to transient consumer downtime.
+
+**Kafka topics:**
+
+| Topic | Publisher | Consumer(s) | Business Event |
+|-------|-----------|------------|---------------|
+| event-created | Event Service | Notification, Search | New event published |
+| event-updated | Event Service | Notification, Search | Event details modified |
+| event-deleted | Event Service | Notification, Search | Event removed |
+| rsvp-created | Event Service | Notification | User RSVPs to an event |
+| rsvp-cancelled | Event Service | Notification | User cancels an RSVP |
+| group-indexed | User Service | Search | Group created or updated |
+| group-deleted | User Service | Search | Group removed |
+| join-request-submitted | User Service | Notification | User requests group membership |
+| join-request-approved | User Service | Notification | Organiser approves join request |
+| join-request-rejected | User Service | Notification | Organiser rejects join request |
+
+Cross-service references (e.g., `organizer_email` on an event record, `event_id` on a notification) are stored as plain VARCHAR columns. No foreign-key constraints cross database boundaries; referential integrity is enforced at the application layer.
+
+**Advantages:**
+- **Independent scalability** — each service can be allocated compute resources proportional to its workload. The Search Service (Ollama embedding generation) can be given additional CPU and memory without affecting any other service.
+- **Asynchronous performance** — Kafka messaging means RSVP confirmation is returned to the client immediately; notification dispatch and Elasticsearch indexing proceed asynchronously without blocking the HTTP response.
+- **Fault containment** — failure in the Vendor or Support Service does not affect Event, User, or Search Services; core platform operations remain available.
+- **Durable messaging** — Kafka persists messages to disk. If the Notification Service is temporarily unavailable, it resumes consumption from the last committed offset on recovery with no data loss.
+- **Centralised security** — the API Gateway validates JWT authenticity once per request; per-service databases limit the blast radius of any credential compromise to that service's data only.
+- **Extensibility** — a new capability (e.g., Analytics, Payments) is added as a new service with a new Gateway route. No existing service code is modified.
+- **Independent testability** — each service can be exercised end-to-end against its own isolated database without running the full platform.
+
+**Disadvantages:**
+- Operational complexity — 13+ containers must be orchestrated, monitored, and debugged concurrently.
+- Eventual consistency — data may be transiently inconsistent across service boundaries.
+- Distributed debugging — a failed RSVP transaction spans the Event Service, Kafka, and the Notification Service, requiring log correlation across multiple processes.
+- Gateway as single point of entry — an API Gateway failure renders every service unreachable regardless of individual service health.
+
+---
+
+### 4.3 Comparison Table
+
+| Dimension | Layered (Unselected) | Microservices (Selected) |
+|-----------|---------------------|------------------------|
+| Deployable units | 1 Spring Boot monolith | 7 independent services |
+| Databases | 1 shared PostgreSQL | 5 isolated PostgreSQL databases |
+| Messaging | In-process Spring Events + thread pools | Apache Kafka (async, durable, disk-backed) |
+| Inter-component calls | Direct Java method calls — no network overhead | HTTP REST between services + Kafka async events |
+| Transaction scope | Single ACID database transaction | Eventual consistency across service boundaries |
+| Fault isolation | None — one failure can take down all features | Per-service — peripheral failures remain contained |
+| Scaling | Entire monolith must scale as a unit | Each service scales independently |
+| Elasticsearch sync | Immediate, in-process call on write | Asynchronous via Kafka consumer |
+| Observability | Single log stream | Distributed — requires cross-service log correlation |
+| Infrastructure footprint | Low — 4 containers (app, ES×3, Ollama) | High — 13+ containers including Kafka |
+| RSVP response latency | Higher — notification + ES sync block the thread | Lower — Kafka async confirms RSVP immediately |
+| Search Service scaling | Cannot isolate — whole monolith must scale | Search container can receive dedicated CPU/RAM |
+
+---
+
+### 4.4 Rationale for Selecting the Microservices Architecture
+
+After implementing both architectures, the team identified seven factors that favour the Microservices design.
+
+**1. Independent Scalability for Compute-Intensive Search**
+
+The Search Service generates 768-dimensional Ollama vector embeddings for every event and group record — a workload significantly more CPU- and memory-intensive than the User, Vendor, or Support services. The Microservices architecture permits the Search Service container to be allocated additional resources in isolation. In the Layered monolith the entire application must be over-provisioned to serve the embedding workload.
+
+**2. Reduced RSVP Response Latency via Asynchronous Messaging**
+
+In the Layered architecture an RSVP request is on the critical path for both notification persistence and Elasticsearch index updates, both of which execute synchronously within the same thread. In the Microservices variant the Event Service publishes a Kafka event and returns the RSVP confirmation immediately; downstream consumers process notifications and index updates asynchronously and in parallel.
+
+**3. Availability Through Fault Containment**
+
+Vendor management and support ticketing are ancillary concerns relative to event discovery and RSVP. In the Layered architecture, resource exhaustion or a defect in either module is capable of terminating the entire Spring Boot process. The Microservices architecture contains such failures: the Vendor and Support Services can be restarted or remain down while User, Event, and Search Services continue to serve traffic.
+
+**4. Durability of Asynchronous Notifications**
+
+Kafka persists messages to disk with configurable retention. If the Notification Service becomes unavailable, pending messages accumulate in the topic and are delivered in order when the service recovers. The in-process thread pool used by the Layered architecture offers no equivalent guarantee — messages queued in memory are lost if the process terminates before they are processed.
+
+**5. Centralised Security Enforcement**
+
+The API Gateway validates JWT authenticity and claims for every inbound request before forwarding it to any downstream service. The Database-per-Service pattern additionally constrains the impact of any breach: a compromised Vendor Service cannot access user credentials, event records, or RSVP data held by other services.
+
+**6. Non-Intrusive Extensibility**
+
+Each addition in the Microservices architecture is a new service with a new route declaration in the API Gateway; no existing service code is modified. In the Layered monolith each new feature adds shared code to a growing codebase and increases the surface area for regression defects.
+
+**7. Independent Verification of Service Behaviour**
+
+Each microservice operates against its own isolated database and can be validated end-to-end without spinning up the full platform. This isolation eliminates test interference between domains and allows parallel development across the team.
+
+---
+
+## Section 5: Deviations from the Project Proposal
+
+### 5.1 Original Recommendation
+
+The Group 06 project proposal evaluated both candidate architectures and recommended the Layered (N-Tier) Architecture on the following grounds:
+
+1. **Transactional integrity for RSVP and waitlist management** — a single shared database allows the available-spots check and RSVP creation to execute within an atomic transaction, eliminating race conditions where two concurrent requests claim the last remaining slot.
+2. **Simplified cross-domain queries** — the Vendor and Support modules frequently join against User and Event data. In the Layered architecture this is a single SQL JOIN; in Microservices it requires a synchronous inter-service HTTP call, introducing latency and a network failure mode.
+3. **Immediate search index consistency** — the Layered architecture pushes newly created events to Elasticsearch in-process and synchronously; the Kafka-based pipeline introduces a propagation delay before new records become searchable.
+4. **Proportionate complexity** — the proposal concluded that the operational overhead of multiple databases, an API gateway, inter-service contracts, and a message broker was not justified by the scale requirements of the project.
+
+### 5.2 Rationale for the Change
+
+Hands-on implementation of both architectures revealed that several of the proposal's foundational assumptions did not hold in practice.
+
+**Kafka operational complexity was overstated.** Running Kafka in KRaft mode — which eliminates the ZooKeeper dependency and reduces the deployment to a single container — proved straightforward within a Docker Compose environment. The overhead of configuring producer and consumer bindings was modest and proportionate to the reliability and decoupling benefits realised.
+
+**RSVP consistency is an application-layer concern in both designs.** The race condition described in the proposal must be addressed at the application layer regardless of whether a shared or distributed database is used. The Microservices variant applies the same available-spots guard and achieves equivalent correctness through application-level concurrency control.
+
+**Embedding workload demands independent resource allocation.** The computational cost of generating 768-dimensional Ollama vector embeddings was substantially underestimated at the proposal stage. In production-representative conditions this workload consumes significantly more CPU and memory than any other service. The inability to allocate resources selectively to the Search Service without over-provisioning the entire monolith represented a material deficiency of the Layered design.
+
+**RSVP latency was measurably worse under the Layered model.** Performance measurements taken during implementation showed that RSVP response times under the Layered architecture were elevated relative to the Microservices implementation. The cause was the synchronous execution of notification persistence and Elasticsearch indexing within the RSVP request thread.
+
+**Single-process failure risk manifested during development.** Defects introduced to the Vendor and Support modules during iterative development required full application restarts, interrupting concurrent work on the event and RSVP subsystems. In the microservices implementation equivalent defects were isolated to the affected container with no disruption to adjacent services.
+
+---
+
+## Section 6: Additional Design Decisions
+
+### 6.1 Raw JDBC in Preference to JPA/Hibernate
+
+Both implementations access PostgreSQL through the Spring JDBC template with hand-written SQL rather than through an ORM framework.
+
+- **Query precision** — the search, recommendation, and RSVP queries involve multi-table joins, conditional predicates, and aggregation patterns that are cumbersome to express in JPQL. Hand-written SQL is more readable, maintainable, and directly optimisable.
+- **Elimination of lazy-loading hazards** — JPA lazy loading can silently trigger N+1 query chains when entity graphs are serialised to JSON. With JDBC every database interaction is an explicit method call with no implicit round-trips.
+- **Predictable execution plans** — ORM-generated SQL varies with provider version and caching state. Plain SQL queries are stable, directly inspectable in application logs, and easily profiled with `EXPLAIN ANALYZE`.
+
+### 6.2 Hybrid Search: Lexical and Semantic Retrieval
+
+The search subsystem combines two complementary retrieval strategies.
+
+- **Lexical search (BM25)** — Elasticsearch's inverted-index full-text search ranks results by term frequency and inverse document frequency. This excels at precise keyword queries such as "jazz festival downtown".
+- **Semantic search (approximate K-NN)** — the Ollama `nomic-embed-text` model converts event and group descriptions into 768-dimensional dense vectors. Elasticsearch's K-NN index finds semantically proximate documents even when vocabulary does not overlap — a query for "outdoor activities" can surface "hiking meetup in the park" without a shared keyword. This capability runs entirely within the Docker environment with no external embedding API required.
+
+The two result sets are merged and re-ranked by a linear combination of BM25 score and cosine similarity.
+
+### 6.3 JWT-Based Stateless Authentication
+
+The platform authenticates all requests through JSON Web Tokens issued by the jjwt 0.12.6 library. Tokens are self-contained: the email and role claims embedded in the signed payload are sufficient for all authorisation decisions, eliminating the need for a shared session store. The system can therefore scale horizontally without session affinity. Role-based access control is enforced declaratively through Spring Security's `@PreAuthorize` annotations at the controller method level, avoiding database lookups on every request.
+
+In the Microservices architecture the API Gateway validates the JWT signature and expiry once per inbound request. Downstream services trust the pre-validated claims forwarded by the gateway, avoiding redundant verification on every inter-service hop.
+
+### 6.4 PostgreSQL as Authoritative Source of Truth
+
+Elasticsearch functions as a read-optimised secondary index rather than a primary data store. All write operations target PostgreSQL; the Elasticsearch index is populated asynchronously by the ingestion subsystem. This has three consequences:
+
+- **Recoverability** — if the Elasticsearch index is corrupted or falls out of synchronisation, it can be rebuilt in full from PostgreSQL by invoking `/api/search/reindex`. No data is permanently lost.
+- **Transactional integrity** — RSVP booking, group membership updates, and all other state-changing operations are committed to PostgreSQL under ACID semantics. Elasticsearch's eventual consistency is acceptable for search results, which are inherently approximate by nature.
+- **Write path simplicity** — dual-write strategies introduce a failure mode where one store is updated and the other is not. The asynchronous ingest pattern eliminates this class of failure at the cost of a small, bounded propagation delay.
+
+### 6.5 Angular 21 with Standalone Components
+
+The frontend application uses the standalone component model that became the Angular default from version 17 onward. Standalone components declare their own import graphs directly rather than delegating to an NgModule, which makes each component's dependencies explicit and locally visible. Angular 21's reactive signal primitives replace RxJS BehaviorSubject for local component state management, reducing subscription lifecycle complexity and producing more efficient change detection. The application source is organised by feature domain (social-event, search, profile) rather than by artefact type, keeping related components, services, and route declarations co-located.
+
+### 6.6 Database-per-Service Pattern
+
+Each microservice owns exactly one PostgreSQL database. This enforces strict service autonomy: the Event Service can evolve its schema independently of the Notification Service without requiring a coordinated migration. The primary trade-off is that queries requiring data from more than one service domain must be resolved through an HTTP call rather than a SQL JOIN, introducing a small latency cost and a network failure mode. The team determined this cost is acceptable given the scalability, fault-isolation, and independent-deployment benefits the pattern enables.
